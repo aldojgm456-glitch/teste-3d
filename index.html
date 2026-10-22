@@ -1,0 +1,642 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NORT · Como funciona</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cena 3D fixa ocupando a tela; o texto rola numa coluna à esquerda e cada seção muda a cena. Visual escuro único, de propósito. */
+:root{
+  --bg:#070B14; --bg2:#0C1322; --fg:#E7EBF3; --fg2:#C3CCDC; --muted:#8F9BB3;
+  --line:rgba(143,155,179,.22); --acc:#7AA7FF; --acc-ink:#0A1630; --amb:#F2B84B;
+  --panel:rgba(10,16,30,.66);
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:dark;
+}
+html{background:var(--bg);scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y;cursor:grab}
+#gl.drag{cursor:grabbing}
+.scrim{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,var(--bg) 0%,rgba(7,11,20,.9) 30%,rgba(7,11,20,.35) 52%,rgba(7,11,20,0) 66%)}
+.nogl #gl{display:none}
+.nogl .scrim{background:radial-gradient(1200px 700px at 75% 40%,#13213f 0%,var(--bg) 70%)}
+
+/* topo */
+header.top{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background:linear-gradient(180deg,rgba(7,11,20,.95) 0%,rgba(7,11,20,.7) 70%,rgba(7,11,20,0) 100%)}
+.bar{display:flex;align-items:center;gap:20px;height:64px;max-width:1400px;margin:0 auto}
+.brand{font:700 15px/1 var(--display);letter-spacing:.14em;color:var(--fg);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:12px;height:12px;border:2px solid var(--acc);transform:rotate(45deg);display:inline-block}
+nav.links{display:flex;gap:2px;min-width:0}
+nav.links a{font:500 11.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  padding:9px 10px;border-radius:6px;text-decoration:none;white-space:nowrap;transition:color .2s,background .2s}
+nav.links a:hover{color:var(--fg)}
+nav.links a.on{color:var(--fg);background:rgba(122,167,255,.13)}
+.count{margin-left:auto;font:500 13px/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.count b{color:var(--fg);font-weight:500}
+.progress{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--acc);transform-origin:0 50%;transform:scaleX(0)}
+@media (max-width:1180px){nav.links{display:none}}
+
+/* legenda da cena */
+.legend{position:fixed;z-index:3;right:max(24px,calc(env(safe-area-inset-right,0px) + 24px));bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
+  pointer-events:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
+.legend .now{font:500 13px/1.3 var(--mono);color:var(--fg);background:var(--panel);border:1px solid var(--line);padding:8px 12px;border-radius:6px;backdrop-filter:blur(6px)}
+.legend .hint{font:400 11.5px/1 var(--mono);color:var(--muted);letter-spacing:.06em}
+
+/* conteúdo */
+main{position:relative;z-index:2;pointer-events:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sec{min-height:94vh;display:flex;align-items:center;padding-block:112px 72px;max-width:1400px;margin:0 auto}
+.inner{pointer-events:auto;width:100%;max-width:570px;min-width:0;margin-left:clamp(0px,4vw,56px);display:flex;flex-direction:column;gap:22px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--acc);display:flex;gap:12px;align-items:center}
+.eyebrow span{color:var(--muted)}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font:600 clamp(46px,7.2vw,104px)/.98 var(--display);letter-spacing:-.025em}
+h1 em{font-style:normal;color:var(--acc)}
+h2{font:500 clamp(28px,3.3vw,44px)/1.12 var(--display);letter-spacing:-.015em}
+h3{font:600 19px/1.3 var(--body)}
+p{margin:0;color:var(--fg2);font-size:17px;max-width:62ch}
+p.lead{font-size:clamp(18px,1.6vw,21px);color:var(--fg)}
+p b,li b{color:var(--fg);font-weight:600}
+.note{font:400 13px/1.4 var(--mono);color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+.btn{appearance:none;border:1px solid var(--acc);background:var(--acc);color:var(--acc-ink);font:600 15px/1 var(--body);
+  padding:14px 20px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-flex;gap:10px;align-items:center;transition:transform .15s,background .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--acc)}
+.btn.ok{background:transparent;color:var(--acc);border-color:var(--acc)}
+:focus-visible{outline:2px solid var(--amb);outline-offset:3px}
+
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:400 12px/1 var(--mono);color:var(--fg2);border:1px solid var(--line);padding:6px 8px;border-radius:4px}
+.badge{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--amb)}
+
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;counter-reset:s}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:4px 12px;padding:14px 0;border-top:1px solid var(--line);color:var(--fg2)}
+ol.steps li::before{content:counter(s,decimal-leading-zero);font:500 13px/1.7 var(--mono);color:var(--acc)}
+
+/* listas selecionáveis */
+.pick{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.pick button{appearance:none;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);color:inherit;
+  padding:16px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;font:inherit;border-radius:0;transition:background .2s}
+.pick li:last-child button{border-bottom:1px solid var(--line)}
+.pick button:hover{background:rgba(122,167,255,.05)}
+.pick button[aria-pressed="true"]{background:rgba(122,167,255,.1)}
+.pick button[aria-pressed="true"] h3{color:var(--acc)}
+.pick .head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.pick .cap{font:400 12px/1 var(--mono);color:var(--muted)}
+.pick p{font-size:15.5px}
+.pick .k{font:500 12px/1.7 var(--mono);color:var(--acc)}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:600 14px/1 var(--body);padding:10px 16px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--acc-ink)}
+
+.cases{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.case{appearance:none;text-align:left;background:var(--panel);border:1px solid var(--line);color:inherit;border-radius:10px;padding:16px;cursor:pointer;
+  display:flex;flex-direction:column;gap:8px;font:inherit;position:relative;overflow:hidden;min-width:0}
+.case p{font-size:14.5px;line-height:1.5}
+.case[aria-pressed="true"]{border-color:var(--acc)}
+.case[aria-pressed="true"] h3{color:var(--acc)}
+.case .run{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--acc);transform:scaleX(0);transform-origin:0 50%}
+.case.play .run{animation:run 1.4s ease-out forwards}
+@keyframes run{to{transform:scaleX(1)}}
+
+.qa{display:flex;flex-direction:column;gap:0;margin:0}
+.qa div{padding:16px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.qa dt{font:600 17px/1.35 var(--body);color:var(--fg)}
+.qa dd{margin:0;color:var(--fg2)}
+.closing{font:500 clamp(18px,1.8vw,22px)/1.4 var(--display);color:var(--fg);letter-spacing:-.01em}
+.closing span{color:var(--acc)}
+
+.pd{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pd button{appearance:none;text-align:left;font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pd button.main{border-color:rgba(122,167,255,.55)}
+.pd button.main h3{color:var(--acc)}
+.pd button[aria-pressed="true"]{background:rgba(122,167,255,.14)}
+.pd p{font-size:14.5px;line-height:1.5}
+
+.big{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end}
+.big div{display:flex;flex-direction:column;gap:4px}
+.big strong{font:600 clamp(40px,4.4vw,60px)/1 var(--display);color:var(--fg);font-variant-numeric:tabular-nums}
+.big strong.a{color:var(--acc)}
+.big span{font:400 12px/1.3 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px max(16px,env(safe-area-inset-right,0px)) calc(48px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font:400 12px/1.4 var(--mono);color:var(--muted);border-top:1px solid var(--line)}
+
+@media (max-width:900px){
+  .scrim{background:linear-gradient(180deg,rgba(7,11,20,.1) 0%,rgba(7,11,20,.35) 40%,rgba(7,11,20,.55) 100%)}
+  .sec{min-height:auto;padding-block:84px 24px}
+  .sec:first-child{min-height:92vh;align-items:flex-end}
+  .inner{margin-left:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .legend{left:max(16px,env(safe-area-inset-left,0px));right:auto;align-items:flex-start;text-align:left;top:calc(env(safe-area-inset-top,0px) + 70px);bottom:auto}
+  .legend .hint{display:none}
+}
+@media (max-width:460px){.cases,.pd{grid-template-columns:1fr}}
+</style>
+</head><body>
+
+<canvas id="gl" aria-label="Cena 3D: sistemas do escritório ligados a um banco de dados central"></canvas>
+<div class="scrim"></div>
+
+<header class="top">
+  <div class="bar">
+    <a class="brand" href="#topo"><i></i>NORT</a>
+    <nav class="links" aria-label="Seções">
+      <a href="#topo">Início</a><a href="#introducao">Introdução</a><a href="#fluxo">Fluxo</a><a href="#frentes">Frentes</a><a href="#eco">Ecossistema</a><a href="#casos">Exemplo</a><a href="#integracao">Integração</a><a href="#simples">Em palavras simples</a><a href="#pd">P&amp;D</a>
+    </nav>
+    <div class="count"><b id="cnum">01</b> / 09</div>
+  </div>
+  <div class="progress" id="prog"></div>
+</header>
+
+<div class="legend" aria-live="polite"><div class="now" id="legend">9 sistemas, cada um com seu cadastro</div><div class="hint">arraste para girar · role para avançar</div></div>
+
+<main>
+  <section class="sec" id="topo" data-title="Início">
+    <div class="inner">
+      <div class="eyebrow">NORT <span>gestão · processos · sistemas · automações</span></div>
+      <h1>Como <em>funciona</em></h1>
+      <p class="lead">Gestão, processos, sistemas e automações no escritório.</p>
+      <p>Tudo começa pelo fluxo do próprio escritório.</p>
+      <div class="row">
+        <a class="btn" href="#introducao">Começar ↓</a>
+        <button class="btn ghost" id="fs" type="button">Tela cheia</button>
+      </div>
+      <p class="note">Use as setas do teclado ou a rolagem para navegar.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="introducao" data-title="Introdução">
+    <div class="inner">
+      <div class="eyebrow">02 <span>Introdução</span></div>
+      <h2>O escritório funciona a partir do seu próprio fluxo</h2>
+      <p class="lead">Cada setor tem rotinas, ferramentas e gargalos próprios.</p>
+      <p>É sobre isso que se apoiam as quatro frentes pedidas: <b>gestão</b>, <b>processos</b>, <b>sistemas</b> e <b>automações</b>. O peso maior está em automações e sistemas, onde o ganho de tempo é mais direto e onde eu mais me encaixaria.</p>
+      <p>Antes de qualquer sistema, porém, é preciso entender o fluxo do escritório.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="fluxo" data-title="Fluxo">
+    <div class="inner">
+      <div class="eyebrow">03 <span>Fluxo</span></div>
+      <h2>Para implementar algo, é preciso ver o fluxo do escritório</h2>
+      <p>Solução copiada de outro lugar costuma automatizar o passo errado. Por isso, antes de qualquer ferramenta, o fluxo do próprio escritório é entendido.</p>
+      <ol class="steps">
+        <li>Conversa com quem executa as tarefas em cada setor, além da gestão.</li>
+        <li>Acompanhamento do dia a dia para ver onde o trabalho trava ou é refeito.</li>
+        <li>Mapa dos sistemas em uso e de quais deles não se conversam.</li>
+        <li>Lista dos gargalos, ordenada por impacto em horas e em risco de erro ou de prazo.</li>
+      </ol>
+      <p>O resultado é um mapa do fluxo e uma lista priorizada do que resolver primeiro.</p>
+      <div class="row"><button class="btn" id="fix" type="button" aria-pressed="false">Automatizar o gargalo</button><span class="note" id="fixnote">Na cena, o Setor B trava o trabalho.</span></div>
+    </div>
+  </section>
+
+  <section class="sec" id="frentes" data-title="Frentes">
+    <div class="inner">
+      <div class="eyebrow">04 <span>Frentes</span></div>
+      <h2>As quatro frentes</h2>
+      <p>O peso maior está em sistemas e automações, onde o ganho de tempo é mais direto. Clique em cada frente para ver na cena.</p>
+      <ul class="pick" id="frentesList">
+        <li><button type="button" data-f="gestao" aria-pressed="false">
+          <span class="head"><h3>Gestão</h3><span class="cap">anda junto com Processos</span></span>
+          <p>Ajuda a entender quem cuida do quê e o que falta, tanto em sistemas de desenvolvimento quanto em ferramentas básicas que o escritório talvez já tenha, mas não aproveita da devida forma.</p>
+          <span class="tags"><span class="tag">quem cuida do quê</span><span class="tag">o que falta</span><span class="tag">ferramentas que já existem</span></span>
+        </button></li>
+        <li><button type="button" data-f="processos" aria-pressed="false">
+          <span class="head"><h3>Processos</h3><span class="cap">anda junto com Gestão</span></span>
+          <p>Separar os fluxos de cada setor, principalmente junto com os líderes, distinguindo funções dos liderados e funções do setor. O objetivo é entender as dores e o que falta para o setor rodar com mais fluidez, sem trabalho manual, e até economizar gastos internos do próprio escritório.</p>
+          <span class="tags"><span class="tag">fluxos por setor</span><span class="tag">funções dos líderes</span><span class="tag">sem trabalho manual</span></span>
+        </button></li>
+        <li><button type="button" data-f="sistemas" aria-pressed="false">
+          <span class="head"><h3>Sistemas</h3><span class="badge">Peso maior</span></span>
+          <p>Depois de entender o que o escritório precisa, começa a estruturação e a programação dos sistemas internos: um ecossistema próprio da NORT, com banco de dados próprio e hospedagem própria (domínio na internet).</p>
+          <span class="tags"><span class="tag">banco de dados próprio</span><span class="tag">hospedagem própria</span><span class="tag">domínio na internet</span></span>
+        </button></li>
+        <li><button type="button" data-f="automacoes" aria-pressed="false">
+          <span class="head"><h3>Automações</h3><span class="badge">Peso maior</span></span>
+          <p>Por se tratar de um escritório de contabilidade, a ideia principal é unir as informações internas e fazer com que elas se comuniquem: do RH para o Comercial, para uma central de atendimento, do fiscal ao contábil, tudo no mesmo banco de dados da própria NORT.</p>
+          <span class="tags"><span class="tag">RH e Comercial</span><span class="tag">central de atendimento</span><span class="tag">Fiscal e Contábil</span></span>
+        </button></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="eco" data-title="Ecossistema">
+    <div class="inner">
+      <div class="eyebrow">05 <span>Ecossistema</span></div>
+      <h2>Informações internas, setor por setor</h2>
+      <p>Por se tratar de um escritório de contabilidade, a ideia principal é unir as informações internas e fazer com que elas se comuniquem.</p>
+      <ul class="pick" id="ecoList">
+        <li><button type="button" data-e="1" aria-pressed="true"><span class="head"><h3><span class="k">1 · </span>Setores</h3></span>
+          <p>RH, Comercial, Atendimento, Fiscal e Contábil, cada um com as suas informações.</p></button></li>
+        <li><button type="button" data-e="2" aria-pressed="false"><span class="head"><h3><span class="k">2 · </span>Tudo no mesmo banco de dados</h3></span>
+          <p>Do RH para o Comercial, para uma central de atendimento, do fiscal ao contábil: tudo no mesmo banco de dados da própria NORT.</p></button></li>
+        <li><button type="button" data-e="3" aria-pressed="false"><span class="head"><h3><span class="k">3 · </span>Um ecossistema próprio da NORT</h3></span>
+          <p>Depois de entender o que o escritório precisa, começa a estruturação e a programação dos sistemas internos.</p>
+          <span class="tags"><span class="tag">banco de dados próprio</span><span class="tag">hospedagem própria</span><span class="tag">domínio na internet</span></span></button></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="casos" data-title="Exemplo">
+    <div class="inner">
+      <div class="eyebrow">06 <span>Exemplo</span></div>
+      <h2>Exemplo: o que já foi feito no Rfeitosa</h2>
+      <p>Foi só um exemplo de como isso funciona na prática, com sistemas e automações feitos no Rfeitosa. Clique em um caso para destacá-lo.</p>
+      <div class="cases" id="cases">
+        <button class="case" type="button" data-c="0" aria-pressed="false"><h3>Controladoria</h3><p>Setor que vivia com gargalos de tarefas operacionais. As tarefas foram reduzidas com automação entre sistemas.</p><span class="run"></span></button>
+        <button class="case" type="button" data-c="1" aria-pressed="false"><h3>Setores comerciais</h3><p>Implantação de CRM para os setores comerciais.</p><span class="run"></span></button>
+        <button class="case" type="button" data-c="2" aria-pressed="false"><h3>Pessoas (RH)</h3><p>Sistema de RH para controlar as pessoas internas do escritório, junto com o registro de ponto.</p><span class="run"></span></button>
+        <button class="case" type="button" data-c="3" aria-pressed="false"><h3>Evento</h3><p>App Connect, usado no evento em que a Nort foi campeã nas colocações.</p><span class="run"></span></button>
+      </div>
+      <p>Em todos os casos o ponto de partida foi o fluxo do setor, e a tecnologia veio depois.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="integracao" data-title="Integração">
+    <div class="inner">
+      <div class="eyebrow">07 <span>Integração</span></div>
+      <h2>No Rfeitosa: nove sistemas, um só banco de dados</h2>
+      <p>Em um serviço que fizemos para o Rfeitosa, 9 sistemas tinham os cadastros guardados cada um por conta própria. Juntamos tudo no mesmo banco de dados, e todas as tabelas dos sistemas passaram a se comunicar entre si.</p>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Comparar"><button type="button" id="antes" aria-pressed="true">Antes</button><button type="button" id="depois" aria-pressed="false">Depois</button></div>
+        <span class="note" id="segnote">9 sistemas, 9 cadastros separados</span>
+      </div>
+      <ul class="pick" id="integList">
+        <li><button type="button" data-i="1" aria-pressed="true"><span class="head"><h3><span class="k">01 · </span>Antes: cadastros separados</h3></span>
+          <p>Os 9 sistemas guardavam os seus cadastros de forma separada, cada um no seu canto. Um sistema não enxergava o que o outro tinha.</p></button></li>
+        <li><button type="button" data-i="2" aria-pressed="false"><span class="head"><h3><span class="k">02 · </span>Tudo no mesmo banco de dados</h3></span>
+          <p>Juntamos os 9 sistemas em um único banco de dados. Cada sistema continua com as suas tabelas, mas agora todas ficam no mesmo lugar.</p></button></li>
+        <li><button type="button" data-i="3" aria-pressed="false"><span class="head"><h3><span class="k">03 · </span>Tabelas que se comunicam</h3></span>
+          <p>Como estão no mesmo banco, as tabelas de todos os sistemas passaram a se ligar umas às outras. O que é cadastrado em um sistema fica disponível para os outros.</p></button></li>
+        <li><button type="button" data-i="4" aria-pressed="false"><span class="head"><h3><span class="k">04 · </span>Nenhuma informação vaza</h3></span>
+          <p>Sem cópias soltas entre os sistemas, a informação fica em um só lugar. Por isso nada escapa pelo caminho e tudo fica integrado.</p></button></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="simples" data-title="Em palavras simples">
+    <div class="inner">
+      <div class="eyebrow">08 <span>Em palavras simples</span></div>
+      <h2>Em palavras simples</h2>
+      <dl class="qa">
+        <div><dt>O que é um banco de dados?</dt><dd>É o lugar onde as informações ficam guardadas de forma organizada. Pense em um único arquivo bem arrumado, em vez de nove gavetas separadas, cada uma com a sua versão dos mesmos dados.</dd></div>
+        <div><dt>O que são as tabelas que se comunicam?</dt><dd>Cada sistema organiza os seus dados em tabelas, como planilhas dentro do banco. Quando todas estão no mesmo banco, elas podem se ligar umas às outras: um dado cadastrado uma vez passa a servir a todos os sistemas que precisam dele.</dd></div>
+        <div><dt>Por que nenhuma informação vaza?</dt><dd>Quando cada sistema tem o seu cadastro, os dados acabam copiados e circulando por vários cantos. Com tudo no mesmo banco, não há cópias soltas: a informação fica em um só lugar e os sistemas apenas a consultam e atualizam.</dd></div>
+      </dl>
+      <div class="big">
+        <div><strong>9</strong><span>sistemas</span></div>
+        <div><strong class="a">1</strong><span>banco de dados</span></div>
+        <div><strong>0</strong><span>informação vazando</span></div>
+      </div>
+      <p class="closing">9 sistemas, 1 banco de dados, <span>todas as tabelas conversando</span> e nenhuma informação vazando.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="pd" data-title="P&amp;D">
+    <div class="inner">
+      <div class="eyebrow">09 <span>P&amp;D</span></div>
+      <h2>Um setor de P&amp;D</h2>
+      <p class="lead">Projetos e Desenvolvimento.</p>
+      <p>Se o escritório realmente quiser ter um setor de P&amp;D, é preciso entender que ele fica focado principalmente em <b>sistemas e automações</b>.</p>
+      <div class="pd" id="pdGrid">
+        <button type="button" class="main" data-p="sistemas" aria-pressed="false"><span class="badge">foco principal</span><h3>Sistemas</h3><p>Estruturar e programar os sistemas internos do escritório.</p></button>
+        <button type="button" class="main" data-p="automacoes" aria-pressed="false"><span class="badge">foco principal</span><h3>Automações</h3><p>Unir as informações internas e fazer os setores se comunicarem.</p></button>
+        <button type="button" data-p="gestao" aria-pressed="false"><span class="cap note">apoio</span><h3>Gestão</h3><p>Quem cuida do quê e o que falta.</p></button>
+        <button type="button" data-p="processos" aria-pressed="false"><span class="cap note">apoio</span><h3>Processos</h3><p>O fluxo de cada setor, junto com os líderes.</p></button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><span>NORT · Como funciona</span><span>aldojgm456-glitch</span></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const ORDER=['topo','introducao','fluxo','frentes','eco','casos','integracao','simples','pd'];
+  const ui={fixed:false,frente:null,eco:1,caseSel:null,integ:1,pd:null};
+  let active='topo';
+
+  /* ---------- interface ---------- */
+  const legend=$('#legend');
+  function legendText(){
+    switch(active){
+      case 'topo': return '9 sistemas, cada um com seu cadastro';
+      case 'introducao': return 'Setores com rotinas próprias';
+      case 'fluxo': return ui.fixed?'Gargalo automatizado: o fluxo passa':'Setor B: o trabalho trava aqui';
+      case 'frentes': return ({gestao:'Gestão: quem cuida do quê',processos:'Processos: o fluxo de cada setor',sistemas:'Sistemas: banco de dados próprio no centro',automacoes:'Automações: setores conversando'})[ui.frente]||'As quatro frentes em volta do escritório';
+      case 'eco': return ['','1 · Setores separados','2 · Tudo no mesmo banco de dados','3 · Ecossistema próprio da NORT'][ui.eco];
+      case 'casos': return ui.caseSel==null?'Casos feitos no Rfeitosa':['Controladoria','Setores comerciais','Pessoas (RH)','Evento · App Connect'][ui.caseSel];
+      case 'integracao': return ['','Antes: 9 cadastros separados','Tudo no mesmo banco de dados','Tabelas que se comunicam','Nenhuma informação vaza'][ui.integ];
+      case 'simples': return 'Um só lugar para os dados';
+      case 'pd': return 'P&D: foco em sistemas e automações';
+    }
+    return '';
+  }
+  function refreshLegend(){const t=legendText(); if(legend.textContent!==t) legend.textContent=t;}
+
+  function press(list,btn){list.forEach(b=>b.setAttribute('aria-pressed',b===btn?'true':'false'));}
+
+  const fixBtn=$('#fix');
+  fixBtn.addEventListener('click',()=>{ui.fixed=!ui.fixed;fixBtn.setAttribute('aria-pressed',ui.fixed);
+    fixBtn.textContent=ui.fixed?'Ver o gargalo de novo':'Automatizar o gargalo';fixBtn.classList.toggle('ok',ui.fixed);
+    $('#fixnote').textContent=ui.fixed?'Gargalo automatizado: o trabalho flui entre os setores.':'Na cena, o Setor B trava o trabalho.';refreshLegend();});
+
+  const fBtns=$$('#frentesList button');
+  fBtns.forEach(b=>b.addEventListener('click',()=>{const f=b.dataset.f; if(ui.frente===f){ui.frente=null;press(fBtns,null);} else {ui.frente=f;press(fBtns,b);} refreshLegend();}));
+
+  const eBtns=$$('#ecoList button');
+  eBtns.forEach(b=>b.addEventListener('click',()=>{ui.eco=+b.dataset.e;press(eBtns,b);refreshLegend();}));
+
+  const cBtns=$$('#cases .case');
+  cBtns.forEach(b=>b.addEventListener('click',()=>{ui.caseSel=+b.dataset.c;press(cBtns,b);
+    b.classList.remove('play');void b.offsetWidth;b.classList.add('play');pulseBoost=1;refreshLegend();}));
+
+  const iBtns=$$('#integList button'), antes=$('#antes'), depois=$('#depois');
+  function setInteg(n){ui.integ=n;press(iBtns,iBtns[n-1]);antes.setAttribute('aria-pressed',n===1);depois.setAttribute('aria-pressed',n===4);
+    $('#segnote').textContent=n===1?'9 sistemas, 9 cadastros separados':n===4?'9 sistemas, 1 banco de dados':'Mesmo banco de dados';refreshLegend();}
+  iBtns.forEach(b=>b.addEventListener('click',()=>setInteg(+b.dataset.i)));
+  antes.addEventListener('click',()=>setInteg(1)); depois.addEventListener('click',()=>setInteg(4));
+
+  const pBtns=$$('#pdGrid button');
+  pBtns.forEach(b=>{const on=()=>{ui.pd=b.dataset.p;press(pBtns,b);}; b.addEventListener('click',on); b.addEventListener('mouseenter',on);});
+  $('#pdGrid').addEventListener('mouseleave',()=>{ui.pd=null;press(pBtns,null);});
+
+  $('#fs').addEventListener('click',()=>{const d=document.documentElement;
+    try{ if(document.fullscreenElement) document.exitFullscreen(); else if(d.requestFullscreen) d.requestFullscreen().catch(()=>{}); }catch(e){} });
+
+  /* seção ativa */
+  const secs=ORDER.map(id=>document.getElementById(id)), links=$$('nav.links a'), prog=$('#prog'), cnum=$('#cnum');
+  function onScroll(){
+    const mid=innerHeight*.5; let idx=0;
+    secs.forEach((s,i)=>{if(s.getBoundingClientRect().top<=mid) idx=i;});
+    const id=ORDER[idx];
+    if(id!==active){active=id;links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+id));cnum.textContent=String(idx+1).padStart(2,'0');refreshLegend();}
+    const max=document.documentElement.scrollHeight-innerHeight;
+    prog.style.transform='scaleX('+(max>0?Math.min(1,scrollY/max):0)+')';
+  }
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  links[0].classList.add('on');
+
+  addEventListener('keydown',e=>{
+    if(e.target.closest('button,input,textarea')&&(e.key===' ')) return;
+    const i=ORDER.indexOf(active);
+    let n=null;
+    if(e.key==='ArrowDown'||e.key==='ArrowRight'||e.key==='PageDown') n=Math.min(ORDER.length-1,i+1);
+    if(e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='PageUp') n=Math.max(0,i-1);
+    if(n!==null){e.preventDefault();secs[n].scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+  });
+
+  /* ---------- cena 3D ---------- */
+  let pulseBoost=0;
+  if(!window.THREE){document.documentElement.classList.add('nogl');return;}
+  const canvas=$('#gl');
+  let renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}
+  catch(e){document.documentElement.classList.add('nogl');return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  renderer.setClearColor(0x070b14,1);
+
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const scene=new THREE.Scene();
+  scene.fog=new THREE.Fog(0x070b14,16,34);
+  const camera=new THREE.PerspectiveCamera(40,1,.1,100);
+  const root=new THREE.Group(); scene.add(root);
+
+  scene.add(new THREE.AmbientLight(0x8fa6d6,.5));
+  const key=new THREE.DirectionalLight(0xffffff,.6); key.position.set(5,8,6); scene.add(key);
+  const rim=new THREE.DirectionalLight(0x7aa7ff,.5); rim.position.set(-6,-2,-5); scene.add(rim);
+
+  const grid=new THREE.GridHelper(48,48,0x1a2542,0x111a2f); grid.position.y=-3.6;
+  grid.material.transparent=true; grid.material.opacity=.55; scene.add(grid);
+
+  // poeira de dados
+  {const n=900,a=new Float32Array(n*3);for(let i=0;i<n;i++){const r=8+Math.random()*20,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+    a[i*3]=r*Math.sin(ph)*Math.cos(th);a[i*3+1]=r*Math.cos(ph)*.6;a[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));
+   var dust=new THREE.Points(g,new THREE.PointsMaterial({color:0x8ea6d6,size:.06,transparent:true,opacity:.55,depthWrite:false}));scene.add(dust);}
+
+  const COL={dim:new THREE.Color(0x44547c),acc:new THREE.Color(0x7aa7ff),amb:new THREE.Color(0xf2b84b)};
+  const SYS=['CRM','RH','RFOP','SHUB','CONSULT','TRIBUTÁRIO','CONNECT','VALLEY','CASH'];
+  const SEC=['RH','Comercial','Atendimento','Contábil','Fiscal','','','',''];
+  const CASE=['Controladoria','Comercial · CRM','RH · ponto','App Connect','','','','',''];
+  const SC=[[-4.6,1.9,-1],[-1.4,2.7,-3],[2.3,2.2,-.4],[4.9,.5,-2.6],[-3.1,-.7,1],[.5,.1,-1.9],[3.4,-1.6,.9],[-.8,-2.2,-.2],[-5.3,-1.9,-3]];
+  const CHAIN=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[2,5],[5,8]];
+  const GRIDP=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[0,3],[3,6],[1,4],[4,7],[2,5],[5,8]];
+
+  const boxG=new THREE.BoxGeometry(.9,.9,.9), edgeG=new THREE.EdgesGeometry(boxG), coreG=new THREE.BoxGeometry(.3,.3,.3);
+  const nodes=SYS.map((name,i)=>{
+    const g=new THREE.Group();
+    const mat=new THREE.MeshStandardMaterial({color:0x111a2f,metalness:.5,roughness:.5,transparent:true,opacity:.9,emissive:0x000000});
+    const em=new THREE.LineBasicMaterial({color:0x44547c,transparent:true,opacity:1});
+    const coreM=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0});
+    g.add(new THREE.Mesh(boxG,mat),new THREE.LineSegments(edgeG,em),new THREE.Mesh(coreG,coreM));
+    g.position.set(SC[i][0],SC[i][1],SC[i][2]); root.add(g);
+    return {g,mat,em,coreM,sc:1,spin:(.25+((i*37)%10)/14)*(i%2?1:-1)};
+  });
+
+  // banco de dados central
+  const db=new THREE.Group(); root.add(db);
+  const dbMat=new THREE.MeshStandardMaterial({color:0x14203a,metalness:.6,roughness:.28,emissive:0x1d3a7a,emissiveIntensity:.4});
+  const ringMat=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:.8});
+  const cylG=new THREE.CylinderGeometry(1.1,1.1,.42,56), torG=new THREE.TorusGeometry(1.115,.025,8,72);
+  for(let k=0;k<3;k++){const y=(k-1)*.56;const c=new THREE.Mesh(cylG,dbMat);c.position.y=y;db.add(c);
+    const r=new THREE.Mesh(torG,ringMat);r.rotation.x=Math.PI/2;r.position.y=y+.21;db.add(r);}
+  const dbLight=new THREE.PointLight(0x7aa7ff,0,14); db.add(dbLight);
+  db.scale.setScalar(.0001);
+
+  function makeLinks(color,max){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(max*6),3));
+    const m=new THREE.LineBasicMaterial({color,transparent:true,opacity:0,depthWrite:false});const l=new THREE.LineSegments(g,m);l.max=max;l.frustumCulled=false;root.add(l);return l;}
+  const spokes=makeLinks(0x7aa7ff,12), chain=makeLinks(0x7aa7ff,12), mesh=makeLinks(0x7aa7ff,24);
+
+  const pulseG=new THREE.SphereGeometry(.07,12,12);
+  const pulses=[];for(let j=0;j<14;j++){const m=new THREE.Mesh(pulseG,new THREE.MeshBasicMaterial({color:0xcfe0ff,transparent:true,opacity:0}));root.add(m);pulses.push(m);}
+
+  // rótulos
+  function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+  function makeLabel(text,stroke,wide){
+    const W=wide?1024:512,H=128,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+    x.font='500 44px "IBM Plex Mono", ui-monospace, monospace';
+    const pw=Math.min(W-8,x.measureText(text).width+60),x0=(W-pw)/2;
+    rr(x,x0,24,pw,80,12);x.fillStyle='rgba(9,14,26,.86)';x.fill();x.lineWidth=3;x.strokeStyle=stroke;x.globalAlpha=.7;x.stroke();x.globalAlpha=1;
+    x.fillStyle='#E7EBF3';x.textAlign='center';x.textBaseline='middle';x.fillText(text,W/2,H/2+2);
+    const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.anisotropy=4;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,depthTest:false,opacity:0}));
+    s.scale.set(.48*W/H,.48,1);s.renderOrder=10;s.visible=false;root.add(s);return s;}
+  let labels=null, ex=null;
+  function buildLabels(){
+    if(labels) return;
+    labels={sys:SYS.map(t=>makeLabel(t,'#7AA7FF')),sec:SEC.map(t=>t?makeLabel(t,'#7AA7FF'):null),case:CASE.map(t=>t?makeLabel(t,'#7AA7FF'):null)};
+    ex={A:makeLabel('Setor A','#8F9BB3'),B:makeLabel('Setor B','#8F9BB3'),C:makeLabel('Setor C','#8F9BB3'),
+        trava:makeLabel('trabalho trava aqui','#F2B84B',true),db:makeLabel('NORT · banco de dados','#7AA7FF',true)};
+    ex.A.position.set(-3.4,2.55,0);ex.B.position.set(0,2.55,0);ex.C.position.set(3.4,2.55,0);ex.trava.position.set(0,-2.6,0);
+  }
+  Promise.race([document.fonts?document.fonts.ready:Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(buildLabels);
+
+  /* estados da cena por seção */
+  function base(){const n=[];for(let i=0;i<9;i++)n.push({p:null,s:1,c:'dim',v:1});
+    return {n,db:0,glow:.3,spokes:0,chain:0,mesh:0,meshPairs:null,chainCol:'acc',pulse:null,lab:null,labOp:1,ex:{A:0,B:0,C:0,trava:0,db:0},cam:[0,1,12],look:[0,0,0]};}
+  const scatter=(N,c=9)=>N.forEach((n,i)=>{if(i<c)n.p=SC[i];else n.v=0;});
+  const gridL=N=>N.forEach((n,i)=>{n.p=[(i%3-1)*2.3,(1-Math.floor(i/3))*2.0,0];});
+  const sectors=N=>N.forEach((n,i)=>{const c=Math.floor(i/3),r=i%3;n.p=[(c-1)*3.4,(1-r)*1.45,0];});
+  const ring=(N,c,r,a0,wave)=>N.forEach((n,i)=>{if(i>=c){n.v=0;return;}const a=a0+i/c*Math.PI*2;n.p=[Math.cos(a)*r,wave?Math.sin(i*2.1)*wave:0,Math.sin(a)*r];});
+  const allC=(N,c)=>N.forEach(n=>n.c=c);
+
+  function getState(t){
+    const st=base(),N=st.n;
+    switch(active){
+      case 'topo': scatter(N);st.db=.55;st.glow=.5;st.lab='sys';st.labOp=.8;st.spokes=.12;st.cam=[0,.8,13.5];break;
+      case 'introducao': gridL(N);st.mesh=.22;st.meshPairs=GRIDP;st.cam=[0,.3,11.5];break;
+      case 'fluxo':
+        sectors(N);st.cam=[0,.6,13.5];st.chain=.8;st.ex.A=st.ex.B=st.ex.C=1;
+        if(ui.fixed){allC(N,'acc');st.pulse='chain';st.chainCol='acc';}
+        else{N[5].c='amb';N[5].s=1.25+.08*Math.sin(t*4);st.chainCol='amb';st.ex.trava=1;}
+        break;
+      case 'frentes':
+        switch(ui.frente){
+          case 'gestao': gridL(N);st.mesh=.6;st.meshPairs=GRIDP;allC(N,'acc');N[4].c='amb';N[4].s=1.2;st.cam=[0,.4,11];break;
+          case 'processos': sectors(N);st.chain=.75;st.ex.A=st.ex.B=st.ex.C=1;allC(N,'acc');st.pulse='chain';st.cam=[0,.6,13.5];break;
+          case 'sistemas': ring(N,9,4.4,t*.12);st.db=1.35;st.glow=1;st.spokes=.6;st.lab='sys';st.labOp=.9;st.ex.db=1;st.cam=[0,3.2,12.5];break;
+          case 'automacoes': ring(N,5,3.8,t*.15);st.db=1.1;st.glow=1;st.spokes=.8;st.mesh=.45;st.pulse='spokes';st.lab='sec';allC(N,'acc');st.ex.db=1;st.cam=[0,3.2,13.5];break;
+          default: ring(N,9,4.2,t*.08,.5);st.db=.8;st.glow=.5;st.cam=[0,2.4,12.5];
+        }break;
+      case 'eco':
+        st.lab='sec';st.cam=[0,3.2,13.5];
+        if(ui.eco===1){scatter(N,5);}
+        else if(ui.eco===2){ring(N,5,3.7,t*.05);st.db=1;st.glow=.7;st.spokes=.7;st.pulse='spokes';st.ex.db=1;}
+        else{ring(N,5,3.7,t*.16);st.db=1.15;st.glow=1;st.spokes=.85;st.mesh=.5;st.pulse='spokes';st.ex.db=1;allC(N,'acc');}
+        break;
+      case 'casos':{
+        const P=[[-1.75,1.2,0],[1.75,1.2,0],[-1.75,-1.2,0],[1.75,-1.2,0]];
+        N.forEach((n,i)=>{if(i<4)n.p=P[i];else n.v=0;});
+        st.lab='case';
+        if(ui.caseSel==null)allC(N,'acc');else{N[ui.caseSel].c='acc';N[ui.caseSel].s=1.35;}
+        st.mesh=.25;st.meshPairs=[[0,1],[1,3],[3,2],[2,0]];st.cam=[0,.3,12];break;}
+      case 'integracao':
+        st.lab='sys';st.labOp=.9;st.cam=[0,3.4,13.5];
+        if(ui.integ===1){scatter(N);}
+        else{ring(N,9,4.6,t*(ui.integ===4?.14:.06));st.db=1;st.ex.db=1;st.spokes=.7;st.glow=.6;
+          if(ui.integ>=3)st.mesh=.5;
+          if(ui.integ===4){st.pulse='spokes';allC(N,'acc');st.glow=1;st.db=1.15;}}
+        break;
+      case 'simples': ring(N,9,5.4,t*.12);st.db=1.5;st.glow=1;st.spokes=.35;st.pulse='spokes';st.ex.db=1;st.cam=[0,1.8,8.6];break;
+      case 'pd': {
+        ring(N,9,4.2,t*.1,.6);st.db=1;st.glow=.8;st.mesh=.35;st.spokes=.3;st.cam=[0,7.5,9.5];
+        const f=ui.pd;
+        if(f==='sistemas'){st.db=1.4;st.glow=1;st.spokes=.8;st.lab='sys';st.labOp=.9;}
+        else if(f==='automacoes'){st.pulse='spokes';st.mesh=.7;allC(N,'acc');}
+        else if(f==='gestao'){N[4].c='amb';}
+        else if(f==='processos'){N.forEach((n,i)=>{if(i%3===0)n.c='acc';});}
+        else allC(N,'acc');
+        break;}
+    }
+    return st;
+  }
+
+  /* loop */
+  const cur={db:0,glow:.3,spokes:0,chain:0,mesh:0,pulse:0,ex:{A:0,B:0,C:0,trava:0,db:0}};
+  const camPos=new THREE.Vector3(0,1,14),look=new THREE.Vector3(),tv=new THREE.Vector3(),tc=new THREE.Color(),center=new THREE.Vector3();
+  let mx=0,my=0,rotY=0,dragging=false,lastX=0,t=0,last=performance.now();
+
+  addEventListener('pointermove',e=>{mx=e.clientX/innerWidth*2-1;my=e.clientY/innerHeight*2-1;});
+  canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.classList.add('drag');});
+  addEventListener('pointermove',e=>{if(!dragging)return;rotY+=(e.clientX-lastX)*.006;lastX=e.clientX;});
+  addEventListener('pointerup',()=>{dragging=false;canvas.classList.remove('drag');});
+  addEventListener('pointercancel',()=>{dragging=false;canvas.classList.remove('drag');});
+
+  function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  addEventListener('resize',resize);resize();
+
+  const np=i=>nodes[i].sc>.25?nodes[i].g.position:null;
+  function fill(obj,pairs,getB){
+    const a=obj.geometry.attributes.position.array;let c=0;
+    for(const pr of pairs){if(c>=obj.max)break;const A=np(pr[0]),B=getB?getB(pr[1]):np(pr[1]);if(!A||!B)continue;
+      a[c*6]=A.x;a[c*6+1]=A.y;a[c*6+2]=A.z;a[c*6+3]=B.x;a[c*6+4]=B.y;a[c*6+5]=B.z;c++;}
+    obj.geometry.setDrawRange(0,c*2);obj.geometry.attributes.position.needsUpdate=true;}
+  const ease=(o,k,key,to)=>{o[key]+=(to-o[key])*k;};
+
+  function frame(now){
+    requestAnimationFrame(frame);
+    if(document.hidden){last=now;return;}
+    const dt=Math.min(.05,(now-last)/1000);last=now;
+    const ms=reduce?.25:1; t+=dt*ms;
+    const k=1-Math.exp(-dt*2.8);
+    const st=getState(t);
+    const wide=innerWidth>900;
+
+    root.position.x+=((wide?Math.min(2.7,camera.aspect*1.6):0)-root.position.x)*k;
+    root.position.y+=((wide?0:1.3)-root.position.y)*k;
+    if(!dragging)rotY+=(0-rotY)*dt*.35;
+    root.rotation.y=rotY;
+
+    nodes.forEach((n,i)=>{
+      const s=st.n[i];
+      if(s.p){tv.set(s.p[0],s.p[1]+Math.sin(t*.9+i*1.7)*.09,s.p[2]);n.g.position.lerp(tv,k);}
+      n.sc+=((s.v?s.s:0)-n.sc)*k;
+      n.g.scale.setScalar(Math.max(n.sc,.0001));n.g.visible=n.sc>.01;
+      n.g.rotation.y+=n.spin*dt*ms;n.g.rotation.x+=n.spin*.35*dt*ms;
+      const col=COL[s.c];
+      n.em.color.lerp(col,k);n.coreM.color.lerp(col,k);
+      n.coreM.opacity+=((s.c==='dim'?0:.95)-n.coreM.opacity)*k;
+      n.mat.emissive.lerp(tc.copy(col).multiplyScalar(s.c==='dim'?.04:.2),k);
+      if(labels){for(const set in labels){const sp=labels[set][i];if(!sp)continue;
+        const to=(st.lab===set?st.labOp:0)*(s.v?1:0);sp.material.opacity+=(to-sp.material.opacity)*k;sp.visible=sp.material.opacity>.01;
+        sp.position.set(n.g.position.x,n.g.position.y+.55*n.sc+.42,n.g.position.z);}}
+    });
+
+    ease(cur,k,'db',st.db);ease(cur,k,'glow',st.glow);ease(cur,k,'spokes',st.spokes);ease(cur,k,'chain',st.chain);ease(cur,k,'mesh',st.mesh);
+    db.scale.setScalar(Math.max(cur.db,.0001));db.visible=cur.db>.01;db.rotation.y+=dt*.25*ms;
+    ringMat.opacity=.35+.6*cur.glow;dbMat.emissiveIntensity=.2+.7*cur.glow;dbLight.intensity=1.8*cur.glow*cur.db;
+    const dbOn=cur.db>.15;const dbP=()=>dbOn?center:null;
+
+    const vis=[];for(let i=0;i<9;i++)if(st.n[i].v)vis.push(i);
+    fill(spokes,vis.map(i=>[i,0]),dbP);spokes.material.opacity=cur.spokes*Math.min(1,cur.db);
+    fill(chain,CHAIN);chain.material.opacity=cur.chain;chain.material.color.lerp(COL[st.chainCol],k);
+    let mp=st.meshPairs;if(!mp){mp=[];const n=vis.length;for(let a=0;a<n;a++){mp.push([vis[a],vis[(a+1)%n]]);if(n>4)mp.push([vis[a],vis[(a+2)%n]]);}}
+    fill(mesh,mp);mesh.material.opacity=cur.mesh;
+
+    // pulsos de dados
+    const paths=[];
+    if(st.pulse==='spokes'&&dbOn)vis.forEach(i=>{const A=np(i);if(A)paths.push([A,center]);});
+    if(st.pulse==='chain')CHAIN.forEach(([a,b])=>{const A=np(a),B=np(b);if(A&&B)paths.push([A,B]);});
+    pulseBoost=Math.max(0,pulseBoost-dt*.8);
+    ease(cur,k,'pulse',paths.length?1:0);
+    pulses.forEach((p,j)=>{
+      if(!paths.length){p.material.opacity=0;p.visible=false;return;}
+      const pa=paths[j%paths.length];let u=(t*.38+j*.618)%1;if(j%2)u=1-u;
+      p.position.lerpVectors(pa[0],pa[1],u);p.visible=true;
+      p.material.opacity=cur.pulse*Math.sin(u*Math.PI)*(1+pulseBoost);
+      p.scale.setScalar(1+pulseBoost*.8);
+    });
+
+    if(ex){for(const key in ex){ease(cur.ex,k,key,st.ex[key]);const sp=ex[key];sp.material.opacity=cur.ex[key];sp.visible=cur.ex[key]>.01;}
+      ex.db.position.set(0,.95*cur.db+.75,0);}
+
+    dust.rotation.y+=dt*.012*ms;
+    const par=reduce?0:1;
+    tv.set(st.cam[0]+mx*.9*par,st.cam[1]-my*.55*par,st.cam[2]*(wide?1:1.45));
+    camPos.lerp(tv,k*.8);
+    tv.set(st.look[0],st.look[1],st.look[2]);
+    look.lerp(tv,k);
+    camera.position.copy(camPos);
+    camera.lookAt(look);
+    renderer.render(scene,camera);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body></html>
