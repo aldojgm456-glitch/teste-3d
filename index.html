@@ -145,6 +145,46 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 }
 @media (max-width:460px){.cases,.pd{grid-template-columns:1fr}}
 
+/* painel do ícone clicado */
+.legend .hint b{color:var(--acc);font-weight:500}
+.legend .hint .mo{display:none}
+.info{position:fixed;z-index:7;top:calc(env(safe-area-inset-top,0px) + 80px);right:max(24px,calc(env(safe-area-inset-right,0px) + 24px));
+  width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 190px);overflow:auto;display:flex;flex-direction:column;gap:12px;
+  background:rgba(10,16,30,.84);border:1px solid rgba(122,167,255,.35);border-radius:14px;padding:20px 20px 16px;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 24px 60px rgba(0,0,0,.45);
+  opacity:0;visibility:hidden;transform:translateY(-10px) scale(.96);transform-origin:top right;
+  transition:opacity .3s,transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s}
+.info.on{opacity:1;visibility:visible;transform:none;transition:opacity .3s,transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.info::before{content:"";position:absolute;left:0;top:0;height:2px;width:100%;background:linear-gradient(90deg,var(--acc),transparent 80%)}
+.info [hidden]{display:none!important}
+.info h3{font:600 26px/1.15 var(--display);letter-spacing:-.01em;padding-right:34px}
+.info p{font-size:15px;line-height:1.55}
+.info .status{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);background:rgba(122,167,255,.09);border-radius:8px;padding:10px 12px}
+.info .status::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--acc);box-shadow:0 0 10px var(--acc)}
+.info .status.no{background:rgba(242,184,75,.09)}
+.info .status.no::before{background:var(--amb);box-shadow:0 0 10px var(--amb)}
+.info .with{display:flex;flex-direction:column;gap:8px}
+.info .tag.off{color:var(--muted);text-decoration:line-through;opacity:.75}
+.info .x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--fg);font-size:18px;line-height:1;cursor:pointer}
+.info .x:hover{border-color:var(--acc)}
+.info .x{z-index:2}
+.info .eyebrow{padding-right:40px}
+.info .nav{gap:8px}
+.info .nav #infoAct{margin-left:auto}
+.btn.sm{padding:9px 12px;font-size:13.5px}
+.info.swap>*{animation:swap .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--j,0)*45ms)}
+@keyframes swap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tip{position:fixed;z-index:8;left:0;top:0;pointer-events:none;font:500 12px/1 var(--mono);color:var(--fg);background:var(--panel);
+  border:1px solid var(--line);padding:7px 10px;border-radius:6px;opacity:0;transition:opacity .15s;white-space:nowrap;backdrop-filter:blur(6px)}
+.tip.on{opacity:1}
+.tip b{color:var(--acc);font-weight:500}
+@media (max-width:900px){
+  .legend .hint{display:block}.legend .hint .d{display:none}.legend .hint .mo{display:inline}
+  .info{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
+    width:auto;max-height:55vh;transform:translateY(18px);transform-origin:bottom center}
+}
+@media (prefers-reduced-motion:reduce){.info,.info.on{transform:none;transition:opacity .2s,visibility 0s}.info.swap>*{animation:none}}
+
 /* entrada do texto: cada item sobe em sequência quando a seção aparece */
 .js .sec .inner>*{opacity:0;transform:translate3d(0,22px,0);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0)*80ms)}
 .js .sec.in .inner>*{opacity:1;transform:none}
@@ -166,7 +206,19 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   <div class="progress" id="prog"></div>
 </header>
 
-<div class="legend" aria-live="polite"><div class="now" id="legend">9 sistemas, cada um com seu cadastro</div><div class="hint">arraste para girar · role para avançar</div></div>
+<div class="legend" aria-live="polite"><div class="now" id="legend">9 sistemas, cada um com seu cadastro</div><div class="hint"><span class="d"><b>clique nos ícones</b> · arraste para girar · role para avançar</span><span class="mo"><b>toque nos ícones 3D</b></span></div></div>
+
+<aside class="info" id="info" aria-hidden="true" aria-live="polite" aria-labelledby="infoTitle">
+  <button class="x" type="button" id="infoClose" aria-label="Fechar">×</button>
+  <div class="eyebrow" id="infoKind"></div>
+  <h3 id="infoTitle"></h3>
+  <p id="infoText"></p>
+  <p class="status" id="infoStatus"></p>
+  <div class="tags" id="infoTags"></div>
+  <div class="with" id="infoWithBox"><span class="note" id="infoWithT"></span><div class="tags" id="infoWith"></div></div>
+  <div class="row nav"><button class="btn ghost sm" type="button" id="infoPrev" aria-label="Anterior">←</button><button class="btn ghost sm" type="button" id="infoNext" aria-label="Próximo">→</button><button class="btn sm" type="button" id="infoAct"></button></div>
+</aside>
+<div class="tip" id="tip" aria-hidden="true"></div>
 
 <main>
   <section class="sec" id="topo" data-title="Início">
@@ -405,7 +457,13 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   addEventListener('scroll',onScroll,{passive:true}); onScroll();
   links[0].classList.add('on');
 
+  const pick={open:false,close(){},next(){},prev(){}}; // preenchido pela cena 3D
   addEventListener('keydown',e=>{
+    if(pick.open){
+      if(e.key==='Escape'){pick.close();return;}
+      if(e.key==='ArrowRight'){e.preventDefault();pick.next();return;}
+      if(e.key==='ArrowLeft'){e.preventDefault();pick.prev();return;}
+    }
     if(e.target.closest('button,input,textarea')&&(e.key===' ')) return;
     const i=ORDER.indexOf(active);
     let n=null;
@@ -471,7 +529,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     const glow=new THREE.Sprite(glowMat(0)); glow.scale.setScalar(1.7);
     g.add(body,glow); g.position.set(SC[i][0],SC[i][1],SC[i][2]); g.scale.setScalar(.0001); root.add(g);
     return {g,body,mat,em,coreM,glow,sc:0,sv:0,spin:(.25+((i*37)%10)/14)*(i%2?1:-1),rx:i*.7,ry:i*1.3,
-      from:new THREE.Vector3(),off:new THREE.Vector3(),shape:new THREE.Vector3(1,1,1),delay:0,flipDir:i%2?1:-1};
+      from:new THREE.Vector3(),off:new THREE.Vector3(),shape:new THREE.Vector3(1,1,1),delay:0,flipDir:i%2?1:-1,dim:1};
   });
 
   // banco de dados central: três camadas que giram em sentidos diferentes, com pontos na borda para a rotação aparecer
@@ -679,6 +737,143 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     obj.geometry.setDrawRange(0,c*2);obj.geometry.attributes.position.needsUpdate=true;}
   const ease=(o,k,key,to)=>{o[key]+=(to-o[key])*k;};
 
+  /* ---------- clique nos ícones ---------- */
+  // Textos dos painéis. Sistemas sem descrição própria usam o texto padrão; para detalhar um, acrescente aqui.
+  const SYSI={
+    CRM:{t:'Implantação de CRM para os setores comerciais.',tags:['setores comerciais']},
+    RH:{t:'Sistema de RH para controlar as pessoas internas do escritório, junto com o registro de ponto.',tags:['pessoas','registro de ponto']},
+    CONNECT:{t:'App Connect, usado no evento em que a Nort foi campeã nas colocações.',tags:['evento','app']}
+  };
+  const SYSDEF={t:'Um dos 9 sistemas do Rfeitosa, com as suas próprias tabelas.',tags:['cadastro','tabelas']};
+  const CASEI=[
+    {h:'Controladoria',t:'Setor que vivia com gargalos de tarefas operacionais. As tarefas foram reduzidas com automação entre sistemas.',tags:['tarefas operacionais','automação']},
+    {h:'Setores comerciais',t:'Implantação de CRM para os setores comerciais.',tags:['CRM','comercial']},
+    {h:'Pessoas (RH)',t:'Sistema de RH para controlar as pessoas internas do escritório, junto com o registro de ponto.',tags:['RH','registro de ponto']},
+    {h:'Evento',t:'App Connect, usado no evento em que a Nort foi campeã nas colocações.',tags:['App Connect','evento']}
+  ];
+  const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+  const FP=new THREE.Vector3(), lookT=new THREE.Vector3(), camT=new THREE.Vector3();
+  const info=$('#info'), tip=$('#tip');
+  Array.from(info.children).forEach((c,i)=>c.style.setProperty('--j',i));
+  let sel=null, selT0=0, selSec=null, hover=null, infoDirty=false, lastSt=null, act=null, chips=[], selWarn=false, invI=-1, invT=0;
+  const chipCache=new Map();
+  function chipLabel(text,stroke){const key=text+stroke;let s=chipCache.get(key);if(!s){s=makeLabel(text,stroke,text.length>14);s.scale.multiplyScalar(.78);chipCache.set(key,s);}return s;}
+
+  const kindOf=st=>st.lab==='sec'?'sec':st.lab==='case'?'case':active==='fluxo'?'flow':'sys';
+  const linked=st=>st.spokes>=.3||st.mesh>=.45;
+  function nameOf(i){
+    if(i==='db') return 'NORT · banco de dados';
+    const k=kindOf(lastSt);
+    return k==='sec'?SEC[i]:k==='case'?CASEI[i].h:k==='flow'?'Setor '+'ABC'[Math.floor(i/3)]+' · etapa '+(i%3+1):SYS[i];
+  }
+  function hitTest(cx,cy){
+    if(!lastSt) return null;
+    const r=canvas.getBoundingClientRect();ptr.set((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1);
+    ray.setFromCamera(ptr,camera);
+    const objs=[];
+    nodes.forEach((n,i)=>{if(n.g.visible&&n.sc>.3&&lastSt.n[i].v){const m=n.body.children[0];m.userData.pick=i;objs.push(m);}});
+    if(db.visible&&cur.db>.3)layers.forEach(L=>{const m=L.children[0];m.userData.pick='db';objs.push(m);});
+    const h=ray.intersectObjects(objs,false)[0];
+    return h?h.object.userData.pick:null;
+  }
+  function select(id){
+    if(id===sel) return;
+    chips.forEach(c=>{c.visible=false;c.material.opacity=0;});chips=[];
+    sel=id;selT0=rt;selSec=active;pick.open=id!==null;
+    if(id===null){info.classList.remove('on');info.setAttribute('aria-hidden','true');return;}
+    infoDirty=true;pulseBoost=Math.max(pulseBoost,.6);
+    if(!reduce)spawnWave(id==='db'?center:nodes[id].g.position,'acc',id==='db'?3.2:1.3,id==='db');
+    if(id!=='db'&&kindOf(lastSt)==='case'&&cBtns[id]&&ui.caseSel!==id)cBtns[id].click();
+  }
+  function cycle(d){
+    if(typeof sel!=='number'||!lastSt) return;
+    const v=[];for(let i=0;i<9;i++)if(lastSt.n[i].v)v.push(i);
+    const p=v.indexOf(sel);select(v[(p+d+v.length)%v.length]);
+  }
+  pick.close=()=>select(null);pick.next=()=>cycle(1);pick.prev=()=>cycle(-1);
+  $('#infoClose').addEventListener('click',()=>select(null));
+  $('#infoPrev').addEventListener('click',()=>cycle(-1));
+  $('#infoNext').addEventListener('click',()=>cycle(1));
+  $('#infoAct').addEventListener('click',()=>{if(act){act.f();infoDirty=true;}});
+
+  const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;};
+  function renderInfo(st){
+    const k=sel==='db'?'db':kindOf(st), L=linked(st), others=names=>{const o=[];for(let j=0;j<9;j++)if(j!==sel&&st.n[j].v&&names[j])o.push(names[j]);return o;};
+    let kind='',title='',text='',status=null,tags=[],withT='',withL=[],action=null,chipT=[];
+    if(k==='db'){
+      kind='Banco de dados';title='NORT · banco de dados';
+      text='É o lugar onde as informações ficam guardadas de forma organizada: um único arquivo bem arrumado, em vez de nove gavetas separadas.';
+      status={ok:true,t:'Sem cópias soltas: os sistemas apenas consultam e atualizam a informação, que fica em um só lugar.'};
+      chipT=['9 sistemas','1 banco de dados','0 informação vazando'];
+    }else if(k==='sys'){
+      const name=SYS[sel],d=SYSI[name]||SYSDEF;
+      kind='Sistema '+String(sel+1).padStart(2,'0')+' / 09';title=name;text=d.t;tags=d.tags;
+      status=L?{ok:true,t:'Integrado: as tabelas ficam no banco da NORT e se ligam às dos outros sistemas. O que é cadastrado aqui fica disponível para todos.'}
+              :{ok:false,t:'Isolado: guarda o próprio cadastro, separado. Não enxerga o que os outros sistemas têm.'};
+      withT=L?'Conversa com':'Não enxerga';withL=others(SYS);
+      chipT=L?d.tags.slice(0,2).concat('integrado'):d.tags.slice(0,1).concat('isolado');
+      if(active==='integracao'&&ui.integ===1)action={t:'Integrar no banco de dados',f:()=>setInteg(4)};
+    }else if(k==='sec'){
+      const name=SEC[sel];kind='Setor';title=name;text=name+' tem as suas próprias informações e rotinas.';
+      status=L?{ok:true,t:'No mesmo banco de dados da NORT, as informações daqui chegam aos outros setores.'}
+              :{ok:false,t:'Por enquanto, as informações ficam guardadas só aqui, no canto do setor.'};
+      withT=L?'Conversa com':'Ainda não conversa com';withL=others(SEC);
+      chipT=L?['mesmo banco','automação']:['informação separada'];
+      if(active==='eco'&&ui.eco===1)action={t:'Juntar no banco de dados',f:()=>eBtns[1].click()};
+    }else if(k==='case'){
+      const d=CASEI[sel];kind='Exemplo · Rfeitosa';title=d.h;text=d.t;tags=d.tags;chipT=d.tags;
+      status={ok:true,t:'O ponto de partida foi o fluxo do setor, e a tecnologia veio depois.'};
+    }else{
+      const col='ABC'[Math.floor(sel/3)],step=sel%3+1;
+      kind='Fluxo · Setor '+col;title='Etapa '+step+' do Setor '+col;
+      if(sel===5){
+        text=ui.fixed?'Era aqui que o trabalho travava. Com a automação, ele passa direto para o Setor C.':'O trabalho trava aqui: as etapas de antes se acumulam e o Setor C fica esperando.';
+        status={ok:ui.fixed,t:ui.fixed?'Gargalo automatizado.':'Gargalo: o primeiro ponto a resolver.'};
+        chipT=ui.fixed?['automatizado','fluxo livre']:['gargalo','trabalho parado'];
+      }else{
+        const stuck=col==='C'&&!ui.fixed;
+        text=stuck?'Fica esperando o que vem do Setor B.':'O trabalho segue para a próxima etapa.';
+        status={ok:!stuck,t:stuck?'Parado por causa do gargalo no Setor B.':'Fluindo normalmente.'};
+        chipT=[stuck?'esperando':'fluindo'];
+      }
+      action={t:ui.fixed?'Ver o gargalo de novo':'Automatizar o gargalo',f:()=>fixBtn.click()};
+    }
+    $('#infoKind').textContent=kind;$('#infoTitle').textContent=title;$('#infoText').textContent=text;
+    const S=$('#infoStatus');S.hidden=!status;if(status){S.textContent=status.t;S.classList.toggle('no',!status.ok);}
+    const T=$('#infoTags');T.replaceChildren(...tags.map(x=>el('span','tag',x)));T.hidden=!tags.length;
+    $('#infoWithT').textContent=withT;$('#infoWith').replaceChildren(...withL.map(x=>el('span','tag'+(L?'':' off'),x)));$('#infoWithBox').hidden=!withL.length;
+    act=action;const A=$('#infoAct');A.hidden=!action;if(action)A.textContent=action.t;
+    $('#infoPrev').hidden=$('#infoNext').hidden=sel==='db';
+    info.classList.remove('swap');void info.offsetWidth;info.classList.add('swap');
+    info.classList.add('on');info.setAttribute('aria-hidden','false');
+    selWarn=!!status&&!status.ok;
+    chips.forEach(c=>{c.visible=false;c.material.opacity=0;});
+    chips=chipT.map(x=>chipLabel(x,selWarn?'#F2B84B':'#7AA7FF'));
+  }
+
+  // anéis em volta do ícone escolhido, pulsos que ele envia e linhas até os destinos
+  const haloM=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+  const halo=new THREE.Group(),h1=new THREE.Mesh(new THREE.TorusGeometry(.95,.012,6,90),haloM),h2=new THREE.Mesh(new THREE.TorusGeometry(1.14,.008,6,90),haloM);
+  halo.add(h1,h2);halo.visible=false;root.add(halo);
+  const bc=[];for(let j=0;j<9;j++){const tr=[];for(let q=0;q<3;q++){const s=new THREE.Sprite(glowMat(0));s.visible=false;root.add(s);tr.push(s);}bc.push(tr);}
+  const beams=makeLinks(0x7aa7ff,10);
+  let haloOp=0,bcOp=0;
+  const bcCol=COL.ice.clone(),T0=new THREE.Vector3();
+
+  let downX=0,downY=0;
+  canvas.addEventListener('pointerdown',e=>{downX=e.clientX;downY=e.clientY;});
+  canvas.addEventListener('pointerup',e=>{if(Math.hypot(e.clientX-downX,e.clientY-downY)>6)return;const h=hitTest(e.clientX,e.clientY);select(h===sel?null:h);});
+  function setHover(h,e){
+    if(h!==hover){hover=h;canvas.style.cursor=h!==null?'pointer':'';}
+    if(h===null){tip.classList.remove('on');return;}
+    tip.replaceChildren(document.createTextNode(nameOf(h)+' · '),el('b',null,h===sel?'aberto':'clique para abrir'));
+    tip.style.transform='translate('+(e.clientX+16)+'px,'+(e.clientY+16)+'px)';tip.classList.add('on');
+  }
+  addEventListener('pointermove',e=>{
+    if(e.pointerType!=='mouse'||e.target!==canvas||(dragging&&Math.hypot(e.clientX-downX,e.clientY-downY)>6)){setHover(null);return;}
+    setHover(hitTest(e.clientX,e.clientY),e);
+  });
+
   function frame(now){
     requestAnimationFrame(frame);
     if(document.hidden){last=now;return;}
@@ -687,6 +882,15 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     const k=1-Math.exp(-dt*2.8);
     const st=getState(t);
     if(st.key!==trKey) startTransition(st);
+    lastSt=st;
+    if(sel!==null&&(active!==selSec||(typeof sel==='number'&&!st.n[sel].v)||(sel==='db'&&st.db<.3)))select(null);
+    const kindNow=kindOf(st),linkedNow=linked(st),selLab=st.lab||(kindNow==='sys'?'sys':null),sd=sel!==null?.4:1;
+    if(typeof sel==='number')st.n[sel].s=Math.max(st.n[sel].s,1.3);
+    if(sel==='db'){st.spread=2.1;st.scan=1;st.glow=1;st.ex.db=1;}
+    if(infoDirty&&sel!==null){renderInfo(st);infoDirty=false;}
+    // convite: de tempos em tempos um ícone pisca, para mostrar que dá para clicar
+    if(sel===null&&hover===null&&!reduce&&rt>3&&rt-invT>5){const v=[];for(let i=0;i<9;i++)if(st.n[i].v)v.push(i);
+      if(v.length){invI=v[Math.floor(Math.random()*v.length)];invT=rt;spawnWave(nodes[invI].g.position,'acc',.9,false);}}
     const wide=innerWidth>900, since=rt-trT0;
     const draw=d=>reduce?1:EASE.out(Math.min(1,Math.max(0,(since-d)/1.1)));
 
@@ -717,6 +921,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       // escala com mola: os nós entram com um leve "salto", cada um no seu tempo
       let tgt=s.v?s.s:0;
       if(st.idle==='breathe'&&s.v) tgt*=1+.08*Math.sin(t*2.4);
+      if(i===hover&&sel!==i&&s.v) tgt*=1.12;
       if(p<=0&&n.sc<.05) tgt=0;
       n.sv+=((tgt-n.sc)*90-n.sv*12)*dt; n.sc+=n.sv*dt;
       n.g.scale.setScalar(Math.max(n.sc,.0001)); n.g.visible=n.sc>.01;
@@ -729,6 +934,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       else{ // sync: todos giram juntos, como um sistema só · face: cartões virados para a câmera
         const tx=st.spin==='sync'?t*.35:.12+Math.sin(t*.7+i)*.08, ty=st.spin==='sync'?t*.55:-.25+Math.sin(t*.5+i*1.3)*.2;
         n.rx+=wrap(tx-n.rx)*k*1.5;n.ry+=wrap(ty-n.ry)*k*1.5;}
+      if(i===sel) n.ry+=dt*1.4*ms;
       const fl=(p<1&&tr.flip)?EASE.io(p)*Math.PI*2*n.flipDir:0;
       n.body.rotation.set(n.rx+(tr.flip==='x'?fl:0),n.ry+(tr.flip==='y'?fl:0),tr.flip==='z'?fl:0);
 
@@ -737,11 +943,14 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       n.coreM.opacity+=((s.c==='dim'?0:.95)-n.coreM.opacity)*k;
       n.mat.emissive.lerp(tc.copy(col).multiplyScalar(s.c==='dim'?.04:.22),k);
       const go=(s.c==='dim'?.08:s.c==='amb'?.75:.42)*(1+pulseBoost*.8);
-      n.glow.material.opacity+=(go-n.glow.material.opacity)*k;
+      n.dim+=(((typeof sel==='number'&&sel!==i)?.18:1)-n.dim)*Math.min(1,k*1.5);
+      n.mat.opacity=.9*n.dim;n.em.opacity=n.dim;
+      const inv=i===invI?Math.max(0,1-(rt-invT)/1.4):0;
+      n.glow.material.opacity+=((go+inv*.7+(i===hover?.3:0))*n.dim-n.glow.material.opacity)*Math.min(1,k*(inv?3:1));
       n.glow.material.color.lerp(col,k);
       n.glow.scale.setScalar(1.7+(s.c==='amb'?.35*Math.sin(t*5):0));
       if(labels){for(const set in labels){const lb=labels[set][i];if(!lb)continue;
-        const to=(st.lab===set?st.labOp:0)*(s.v?1:0);lb.material.opacity+=(to-lb.material.opacity)*k;lb.visible=lb.material.opacity>.01;
+        const to=Math.max((st.lab===set?st.labOp:0)*n.dim,(i===sel&&set===selLab)?1:0)*(s.v?1:0);lb.material.opacity+=(to-lb.material.opacity)*k;lb.visible=lb.material.opacity>.01;
         lb.position.set(n.g.position.x,n.g.position.y+.55*n.sc*n.shape.y+.42,n.g.position.z);}}
     });
 
@@ -755,10 +964,10 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     const dbOn=cur.db>.15;const dbP=()=>dbOn?center:null;
 
     const vis=[];for(let i=0;i<9;i++)if(st.n[i].v)vis.push(i);
-    fill(spokes,vis.map(i=>[i,0]),dbP,draw(.35));spokes.material.opacity=cur.spokes*Math.min(1,cur.db);
-    fill(chain,CHAIN,null,draw(.2));chain.material.opacity=cur.chain;chain.material.color.lerp(COL[st.chainCol],k);
+    fill(spokes,vis.map(i=>[i,0]),dbP,draw(.35));spokes.material.opacity=cur.spokes*Math.min(1,cur.db)*sd;
+    fill(chain,CHAIN,null,draw(.2));chain.material.opacity=cur.chain*sd;chain.material.color.lerp(COL[st.chainCol],k);
     let mp=st.meshPairs;if(!mp){mp=[];const n=vis.length;for(let a=0;a<n;a++){mp.push([vis[a],vis[(a+1)%n]]);if(n>4)mp.push([vis[a],vis[(a+2)%n]]);}}
-    fill(mesh,mp,null,draw(.5));mesh.material.opacity=cur.mesh;
+    fill(mesh,mp,null,draw(.5));mesh.material.opacity=cur.mesh*sd;
 
     // pulsos de dados: [início, fim, até onde chegam]. No gargalo eles se acumulam antes do Setor B
     const paths=[];
@@ -778,10 +987,53 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
         if(pa[2]<1)uu=Math.min(u,pa[2]-q*.025+.012*Math.sin(t*9+j));
         s.position.lerpVectors(pa[0],pa[1],uu);s.visible=true;
         s.material.color.copy(pulseCol);
-        s.material.opacity=cur.pulse*Math.sin(u*Math.PI)*(1-q*.24)*(1+pulseBoost);
+        s.material.opacity=cur.pulse*sd*Math.sin(u*Math.PI)*(1-q*.24)*(1+pulseBoost);
         s.scale.setScalar((q?.3-.05*q:.46)*(1+pulseBoost*.8));
       });
     });
+
+    // ícone escolhido: anéis, etiquetas em órbita, pulsos e linhas até os destinos
+    const S0=sel==='db'?center:(typeof sel==='number'?nodes[sel].g.position:null);
+    haloOp+=((S0?1:0)-haloOp)*Math.min(1,k*2);halo.visible=haloOp>.01;
+    if(S0){
+      halo.position.copy(S0);
+      halo.scale.setScalar(sel==='db'?1.45*cur.db:.8*Math.max(.3,nodes[sel].sc)*(1+.04*Math.sin(t*3)));
+      h1.rotation.set(t*.9,t*.4,0);h2.rotation.set(1-t*.6,0,t*.5);
+      haloM.color.lerp(selWarn?COL.amb:COL.acc,Math.min(1,k*2));
+    }
+    haloM.opacity=.7*haloOp;
+    chips.forEach((c,j)=>{
+      if(!S0){c.visible=false;return;}
+      let depth=1;
+      if(sel==='db'){const L=layers[2-j]||layers[0];c.position.set(0,(L.position.y-.05)*cur.db,1.25*cur.db);c.scale.set(c.scale.x/c.scale.y*.55,.55,1);}
+      else{const a=rt*.45+j/chips.length*Math.PI*2,R=1.35*Math.max(.6,nodes[sel].sc);
+        c.position.set(S0.x+Math.cos(a)*R,S0.y+.15+Math.sin(a*2+j)*.25,S0.z+Math.sin(a)*R);depth=.5+.5*(Math.sin(a)+1)/2;}
+      const to=Math.max(0,depth*Math.min(1,(rt-selT0-.25-j*.12)*2.5));
+      c.material.opacity+=(to-c.material.opacity)*Math.min(1,k*3);c.visible=c.material.opacity>.01;
+    });
+    const tg=[];let src=null,via=false;
+    if(S0&&!(sel!=='db'&&kindNow==='case')){
+      if(sel==='db'){src=center;vis.forEach(j=>{const P=np(j);if(P)tg.push([P,1]);});}
+      else if(kindNow==='flow'){src=np(sel);if(src&&!(sel===5&&!ui.fixed))CHAIN.forEach(([a,b])=>{if(a===sel){const P=np(b);if(P)tg.push([P,b===5&&!ui.fixed?.78:1]);}});}
+      else{src=np(sel);if(src){via=dbOn&&linkedNow;vis.forEach(j=>{if(j!==sel){const P=np(j);if(P)tg.push([P,linkedNow?1:.38]);}});}}
+    }
+    bcOp+=((src&&tg.length?1:0)-bcOp)*Math.min(1,k*2);
+    bcCol.lerp(selWarn||tg.some(x=>x[1]<1)?COL.amb:COL.ice,Math.min(1,k*2));
+    const cyc=((rt-selT0)/1.9)%1;
+    bc.forEach((trail,j)=>{const T=tg[j];trail.forEach((s,q)=>{
+      const u=cyc-q*.03;
+      if(!T||!src||u<0||(via&&u<.45&&j>0)){s.visible=false;return;}
+      let op=(u<.06?u/.06:1)*(u>.92?(1-u)/.08:1);
+      if(via){if(u<.45)s.position.lerpVectors(src,center,u/.45);else s.position.lerpVectors(center,T[0],(u-.45)/.55);}
+      else{s.position.lerpVectors(src,T[0],Math.min(u,T[1]));if(u>T[1])op*=Math.max(0,1-(u-T[1])*5);}
+      s.visible=true;s.material.color.copy(bcCol);s.material.opacity=bcOp*op*(1-q*.3);
+      s.scale.setScalar(q?.34-.06*q:(via&&u<.45?.8:.55));
+    });});
+    {const a=beams.geometry.attributes.position.array,f=EASE.out(Math.min(1,(rt-selT0)/.7));let c=0;
+     const put=(A,Bp,lim)=>{a[c*6]=A.x;a[c*6+1]=A.y;a[c*6+2]=A.z;a[c*6+3]=A.x+(Bp.x-A.x)*lim;a[c*6+4]=A.y+(Bp.y-A.y)*lim;a[c*6+5]=A.z+(Bp.z-A.z)*lim;c++;};
+     if(src){if(via&&sel!=='db')put(src,center,f);const S=via?center:src;tg.forEach(T=>{if(c<beams.max)put(S,T[0],Math.min(T[1],f));});}
+     beams.geometry.setDrawRange(0,c*2);beams.geometry.attributes.position.needsUpdate=true;
+     beams.material.opacity=.5*bcOp;beams.material.color.copy(bcCol);}
 
     if(ex){for(const key in ex){ease(cur.ex,k,key,st.ex[key]);const sp=ex[key];sp.material.opacity=cur.ex[key];sp.visible=cur.ex[key]>.01;}
       ex.db.position.set(0,(.95+.3*(cur.spread-1))*cur.db+.75,0);}
@@ -798,10 +1050,14 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       else if(st.move==='crane')cy+=Math.sin(rt*.22)*.7;
       else if(st.move==='dolly')cz*=1-.07*Math.sin(rt*.25);
     }
-    tv.set(cx+mx*.9*par,cy-my*.55*par,cz);
-    camPos.lerp(tv,k*st.camK);
-    tv.set(st.look[0],st.look[1],st.look[2]);
-    look.lerp(tv,k);
+    camT.set(cx+mx*.9*par,cy-my*.55*par,cz);lookT.set(st.look[0],st.look[1],st.look[2]);
+    let ck=k*st.camK,lk=k;
+    if(sel!==null){ // câmera vai até o ícone e o deixa ao lado do painel
+      // no computador o ícone fica no espaço livre entre o texto e o painel; no celular, acima do painel de baixo
+      (sel==='db'?db:nodes[sel].g).getWorldPosition(FP);const dist=(sel==='db'?3+8.5*cur.db:9.2)*(wide?1:1.45),half=dist*Math.tan(camera.fov*Math.PI/360);
+      lookT.set(FP.x-(wide?half*camera.aspect*.18:0),FP.y-(wide?0:half*.5),FP.z);
+      camT.set(lookT.x+mx*.4*par,lookT.y+1.3-my*.25*par,lookT.z+dist);ck=k*1.3;lk=k*1.6;}
+    camPos.lerp(camT,ck);look.lerp(lookT,lk);
     camera.position.copy(camPos);
     camera.lookAt(look);
     const fov=40+Math.sin(warp*Math.PI)*3.5;
