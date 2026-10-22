@@ -1,6 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>NORT · Como funciona</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>document.documentElement.classList.add('js')</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -143,6 +144,11 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   .legend .hint{display:none}
 }
 @media (max-width:460px){.cases,.pd{grid-template-columns:1fr}}
+
+/* entrada do texto: cada item sobe em sequência quando a seção aparece */
+.js .sec .inner>*{opacity:0;transform:translate3d(0,22px,0);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0)*80ms)}
+.js .sec.in .inner>*{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.js .sec .inner>*{transform:none;transition-duration:.01s}}
 </style>
 </head><body>
 
@@ -354,6 +360,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   const fixBtn=$('#fix');
   fixBtn.addEventListener('click',()=>{ui.fixed=!ui.fixed;fixBtn.setAttribute('aria-pressed',ui.fixed);
     fixBtn.textContent=ui.fixed?'Ver o gargalo de novo':'Automatizar o gargalo';fixBtn.classList.toggle('ok',ui.fixed);
+    fxQ.push({at:5,col:ui.fixed?'acc':'amb'});
     $('#fixnote').textContent=ui.fixed?'Gargalo automatizado: o trabalho flui entre os setores.':'Na cena, o Setor B trava o trabalho.';refreshLegend();});
 
   const fBtns=$$('#frentesList button');
@@ -364,10 +371,10 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   const cBtns=$$('#cases .case');
   cBtns.forEach(b=>b.addEventListener('click',()=>{ui.caseSel=+b.dataset.c;press(cBtns,b);
-    b.classList.remove('play');void b.offsetWidth;b.classList.add('play');pulseBoost=1;refreshLegend();}));
+    b.classList.remove('play');void b.offsetWidth;b.classList.add('play');pulseBoost=1;fxQ.push({at:+b.dataset.c,col:'acc'});refreshLegend();}));
 
   const iBtns=$$('#integList button'), antes=$('#antes'), depois=$('#depois');
-  function setInteg(n){ui.integ=n;press(iBtns,iBtns[n-1]);antes.setAttribute('aria-pressed',n===1);depois.setAttribute('aria-pressed',n===4);
+  function setInteg(n){if(n===4&&ui.integ!==4)fxQ.push({at:'db',col:'acc'});ui.integ=n;press(iBtns,iBtns[n-1]);antes.setAttribute('aria-pressed',n===1);depois.setAttribute('aria-pressed',n===4);
     $('#segnote').textContent=n===1?'9 sistemas, 9 cadastros separados':n===4?'9 sistemas, 1 banco de dados':'Mesmo banco de dados';refreshLegend();}
   iBtns.forEach(b=>b.addEventListener('click',()=>setInteg(+b.dataset.i)));
   antes.addEventListener('click',()=>setInteg(1)); depois.addEventListener('click',()=>setInteg(4));
@@ -378,6 +385,12 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   $('#fs').addEventListener('click',()=>{const d=document.documentElement;
     try{ if(document.fullscreenElement) document.exitFullscreen(); else if(d.requestFullscreen) d.requestFullscreen().catch(()=>{}); }catch(e){} });
+
+  /* entrada do texto */
+  $$('.sec .inner').forEach(el=>Array.from(el.children).forEach((c,i)=>c.style.setProperty('--i',i)));
+  if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{rootMargin:'0px 0px -12% 0px'});
+    $$('.sec').forEach(s=>io.observe(s));}
+  else $$('.sec').forEach(s=>s.classList.add('in'));
 
   /* seção ativa */
   const secs=ORDER.map(id=>document.getElementById(id)), links=$$('nav.links a'), prog=$('#prog'), cnum=$('#cnum');
@@ -403,15 +416,18 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   /* ---------- cena 3D ---------- */
   let pulseBoost=0;
+  const fxQ=[]; // ondas disparadas pela interface: {at: índice do nó ou 'db', col}
   if(!window.THREE){document.documentElement.classList.add('nogl');return;}
   const canvas=$('#gl');
   let renderer;
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}
   catch(e){document.documentElement.classList.add('nogl');return;}
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
-  renderer.setClearColor(0x070b14,1);
 
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TINT={base:new THREE.Color(0x070b14),warm:new THREE.Color(0x130d0a),cool:new THREE.Color(0x060e21)};
+  const bgCur=TINT.base.clone();
+  renderer.setClearColor(bgCur,1);
   const scene=new THREE.Scene();
   scene.fog=new THREE.Fog(0x070b14,16,34);
   const camera=new THREE.PerspectiveCamera(40,1,.1,100);
@@ -424,13 +440,19 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   const grid=new THREE.GridHelper(48,48,0x1a2542,0x111a2f); grid.position.y=-3.6;
   grid.material.transparent=true; grid.material.opacity=.55; scene.add(grid);
 
+  // brilho aditivo, faz o papel de um bloom barato
+  const GLOW=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+    const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.22,'rgba(255,255,255,.42)');g.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})();
+  const glowMat=op=>new THREE.SpriteMaterial({map:GLOW,color:0xcfe0ff,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false});
+
   // poeira de dados
   {const n=900,a=new Float32Array(n*3);for(let i=0;i<n;i++){const r=8+Math.random()*20,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
     a[i*3]=r*Math.sin(ph)*Math.cos(th);a[i*3+1]=r*Math.cos(ph)*.6;a[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));
    var dust=new THREE.Points(g,new THREE.PointsMaterial({color:0x8ea6d6,size:.06,transparent:true,opacity:.55,depthWrite:false}));scene.add(dust);}
 
-  const COL={dim:new THREE.Color(0x44547c),acc:new THREE.Color(0x7aa7ff),amb:new THREE.Color(0xf2b84b)};
+  const COL={dim:new THREE.Color(0x44547c),acc:new THREE.Color(0x7aa7ff),amb:new THREE.Color(0xf2b84b),ice:new THREE.Color(0xcfe0ff)};
   const SYS=['CRM','RH','RFOP','SHUB','CONSULT','TRIBUTÁRIO','CONNECT','VALLEY','CASH'];
   const SEC=['RH','Comercial','Atendimento','Contábil','Fiscal','','','',''];
   const CASE=['Controladoria','Comercial · CRM','RH · ponto','App Connect','','','','',''];
@@ -438,24 +460,35 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   const CHAIN=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[2,5],[5,8]];
   const GRIDP=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[0,3],[3,6],[1,4],[4,7],[2,5],[5,8]];
 
+  // cada nó: g leva posição e escala; body leva rotação e formato; o brilho fica fora do body para não deformar
   const boxG=new THREE.BoxGeometry(.9,.9,.9), edgeG=new THREE.EdgesGeometry(boxG), coreG=new THREE.BoxGeometry(.3,.3,.3);
   const nodes=SYS.map((name,i)=>{
-    const g=new THREE.Group();
+    const g=new THREE.Group(), body=new THREE.Group();
     const mat=new THREE.MeshStandardMaterial({color:0x111a2f,metalness:.5,roughness:.5,transparent:true,opacity:.9,emissive:0x000000});
     const em=new THREE.LineBasicMaterial({color:0x44547c,transparent:true,opacity:1});
     const coreM=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0});
-    g.add(new THREE.Mesh(boxG,mat),new THREE.LineSegments(edgeG,em),new THREE.Mesh(coreG,coreM));
-    g.position.set(SC[i][0],SC[i][1],SC[i][2]); root.add(g);
-    return {g,mat,em,coreM,sc:1,spin:(.25+((i*37)%10)/14)*(i%2?1:-1)};
+    body.add(new THREE.Mesh(boxG,mat),new THREE.LineSegments(edgeG,em),new THREE.Mesh(coreG,coreM));
+    const glow=new THREE.Sprite(glowMat(0)); glow.scale.setScalar(1.7);
+    g.add(body,glow); g.position.set(SC[i][0],SC[i][1],SC[i][2]); g.scale.setScalar(.0001); root.add(g);
+    return {g,body,mat,em,coreM,glow,sc:0,sv:0,spin:(.25+((i*37)%10)/14)*(i%2?1:-1),rx:i*.7,ry:i*1.3,
+      from:new THREE.Vector3(),off:new THREE.Vector3(),shape:new THREE.Vector3(1,1,1),delay:0,flipDir:i%2?1:-1};
   });
 
-  // banco de dados central
+  // banco de dados central: três camadas que giram em sentidos diferentes, com pontos na borda para a rotação aparecer
   const db=new THREE.Group(); root.add(db);
   const dbMat=new THREE.MeshStandardMaterial({color:0x14203a,metalness:.6,roughness:.28,emissive:0x1d3a7a,emissiveIntensity:.4});
   const ringMat=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:.8});
   const cylG=new THREE.CylinderGeometry(1.1,1.1,.42,56), torG=new THREE.TorusGeometry(1.115,.025,8,72);
-  for(let k=0;k<3;k++){const y=(k-1)*.56;const c=new THREE.Mesh(cylG,dbMat);c.position.y=y;db.add(c);
-    const r=new THREE.Mesh(torG,ringMat);r.rotation.x=Math.PI/2;r.position.y=y+.21;db.add(r);}
+  const rimG=new THREE.BufferGeometry();
+  {const n=28,a=new Float32Array(n*3);for(let i=0;i<n;i++){const th=i/n*Math.PI*2;a[i*3]=Math.cos(th)*1.13;a[i*3+2]=Math.sin(th)*1.13;}
+   rimG.setAttribute('position',new THREE.BufferAttribute(a,3));}
+  const rimM=new THREE.PointsMaterial({color:0xcfe0ff,size:.09,transparent:true,opacity:.6,depthWrite:false});
+  const layers=[0,1,2].map(()=>{const L=new THREE.Group(),r=new THREE.Mesh(torG,ringMat),p=new THREE.Points(rimG,rimM);
+    r.rotation.x=Math.PI/2;r.position.y=.21;p.position.y=.21;L.add(new THREE.Mesh(cylG,dbMat),r,p);db.add(L);return L;});
+  const LSPIN=[.45,-.3,.7];
+  const scanM=new THREE.MeshBasicMaterial({color:0xcfe0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+  const scan=new THREE.Mesh(new THREE.TorusGeometry(1.32,.018,8,96),scanM); scan.rotation.x=Math.PI/2; db.add(scan);
+  const dbGlow=new THREE.Sprite(glowMat(0)); dbGlow.scale.setScalar(6.5); dbGlow.material.color.set(0x7aa7ff); db.add(dbGlow);
   const dbLight=new THREE.PointLight(0x7aa7ff,0,14); db.add(dbLight);
   db.scale.setScalar(.0001);
 
@@ -463,8 +496,14 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     const m=new THREE.LineBasicMaterial({color,transparent:true,opacity:0,depthWrite:false});const l=new THREE.LineSegments(g,m);l.max=max;l.frustumCulled=false;root.add(l);return l;}
   const spokes=makeLinks(0x7aa7ff,12), chain=makeLinks(0x7aa7ff,12), mesh=makeLinks(0x7aa7ff,24);
 
-  const pulseG=new THREE.SphereGeometry(.07,12,12);
-  const pulses=[];for(let j=0;j<14;j++){const m=new THREE.Mesh(pulseG,new THREE.MeshBasicMaterial({color:0xcfe0ff,transparent:true,opacity:0}));root.add(m);pulses.push(m);}
+  // pulsos de dados com rastro
+  const pulses=[];for(let j=0;j<16;j++){const trail=[];for(let q=0;q<4;q++){const s=new THREE.Sprite(glowMat(0));s.visible=false;root.add(s);trail.push(s);}pulses.push(trail);}
+
+  // ondas de choque
+  const waveG=new THREE.RingGeometry(.94,1,80);
+  const waves=[0,1,2,3,4,5].map(()=>{const m=new THREE.Mesh(waveG,new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+    m.visible=false;root.add(m);return {m,t0:-9,dur:1.5,max:4,flat:false};});
+  let wi=0;
 
   // rótulos
   function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
@@ -487,9 +526,12 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   }
   Promise.race([document.fonts?document.fonts.ready:Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(buildLabels);
 
-  /* estados da cena por seção */
-  function base(){const n=[];for(let i=0;i<9;i++)n.push({p:null,s:1,c:'dim',v:1});
-    return {n,db:0,glow:.3,spokes:0,chain:0,mesh:0,meshPairs:null,chainCol:'acc',pulse:null,lab:null,labOp:1,ex:{A:0,B:0,C:0,trava:0,db:0},cam:[0,1,12],look:[0,0,0]};}
+  /* estados da cena por seção
+     tr: como os nós chegam · idle: como se mexem parados · spin: como giram · shape: formato · move: movimento da câmera */
+  function base(){const n=[];for(let i=0;i<9;i++)n.push({p:null,s:1,c:'dim',v:1,shake:0});
+    return {n,db:0,glow:.3,spokes:0,chain:0,mesh:0,meshPairs:null,chainCol:'acc',pulse:null,pulseSpeed:.38,lab:null,labOp:1,
+      ex:{A:0,B:0,C:0,trava:0,db:0},cam:[0,1,12],look:[0,0,0],camK:.8,
+      tr:'drift',idle:'float',spin:'free',shape:'cube',move:'none',tint:'base',spread:1,scan:0,key:null};}
   const scatter=(N,c=9)=>N.forEach((n,i)=>{if(i<c)n.p=SC[i];else n.v=0;});
   const gridL=N=>N.forEach((n,i)=>{n.p=[(i%3-1)*2.3,(1-Math.floor(i/3))*2.0,0];});
   const sectors=N=>N.forEach((n,i)=>{const c=Math.floor(i/3),r=i%3;n.p=[(c-1)*3.4,(1-r)*1.45,0];});
@@ -499,58 +541,125 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   function getState(t){
     const st=base(),N=st.n;
     switch(active){
-      case 'topo': scatter(N);st.db=.55;st.glow=.5;st.lab='sys';st.labOp=.8;st.spokes=.12;st.cam=[0,.8,13.5];break;
-      case 'introducao': gridL(N);st.mesh=.22;st.meshPairs=GRIDP;st.cam=[0,.3,11.5];break;
+      case 'topo': scatter(N);st.db=.55;st.glow=.5;st.lab='sys';st.labOp=.8;st.spokes=.12;st.cam=[0,.8,13.5];
+        st.tr='drift';st.move='crane';break;
+      case 'introducao': gridL(N);st.mesh=.22;st.meshPairs=GRIDP;st.cam=[0,.3,11.5];
+        st.tr='cascade';st.idle='wave';st.spin='slow';st.move='dolly';break;
       case 'fluxo':
-        sectors(N);st.cam=[0,.6,13.5];st.chain=.8;st.ex.A=st.ex.B=st.ex.C=1;
-        if(ui.fixed){allC(N,'acc');st.pulse='chain';st.chainCol='acc';}
-        else{N[5].c='amb';N[5].s=1.25+.08*Math.sin(t*4);st.chainCol='amb';st.ex.trava=1;}
+        sectors(N);st.cam=[0,.6,13.5];st.chain=.8;st.ex.A=st.ex.B=st.ex.C=1;st.tr='sweep';
+        if(ui.fixed){allC(N,'acc');st.pulse='chain';st.chainCol='acc';st.pulseSpeed=.62;st.spin='sync';}
+        else{N[5].c='amb';N[5].s=1.25+.08*Math.sin(t*4);N[5].shake=1;st.chainCol='amb';st.ex.trava=1;st.pulse='jam';st.tint='warm';}
         break;
       case 'frentes':
+        st.move='orbit';st.key='frentes:'+ui.frente;
         switch(ui.frente){
-          case 'gestao': gridL(N);st.mesh=.6;st.meshPairs=GRIDP;allC(N,'acc');N[4].c='amb';N[4].s=1.2;st.cam=[0,.4,11];break;
-          case 'processos': sectors(N);st.chain=.75;st.ex.A=st.ex.B=st.ex.C=1;allC(N,'acc');st.pulse='chain';st.cam=[0,.6,13.5];break;
-          case 'sistemas': ring(N,9,4.4,t*.12);st.db=1.35;st.glow=1;st.spokes=.6;st.lab='sys';st.labOp=.9;st.ex.db=1;st.cam=[0,3.2,12.5];break;
-          case 'automacoes': ring(N,5,3.8,t*.15);st.db=1.1;st.glow=1;st.spokes=.8;st.mesh=.45;st.pulse='spokes';st.lab='sec';allC(N,'acc');st.ex.db=1;st.cam=[0,3.2,13.5];break;
+          case 'gestao': gridL(N);st.mesh=.6;st.meshPairs=GRIDP;allC(N,'acc');N[4].c='amb';N[4].s=1.2;st.cam=[0,.4,11];
+            st.tr='cascade';st.idle='wave';st.spin='slow';break;
+          case 'processos': sectors(N);st.chain=.75;st.ex.A=st.ex.B=st.ex.C=1;allC(N,'acc');st.pulse='chain';st.cam=[0,.6,13.5];
+            st.tr='sweep';break;
+          case 'sistemas': ring(N,9,4.4,t*.12);st.db=1.35;st.glow=1;st.spokes=.6;st.lab='sys';st.labOp=.9;st.ex.db=1;st.cam=[0,3.2,12.5];
+            st.tr='gather';st.spin='sync';st.scan=1;st.tint='cool';break;
+          case 'automacoes': ring(N,5,3.8,t*.15);st.db=1.1;st.glow=1;st.spokes=.8;st.mesh=.45;st.pulse='spokes';st.lab='sec';allC(N,'acc');st.ex.db=1;st.cam=[0,3.2,13.5];
+            st.tr='implode';st.idle='breathe';break;
           default: ring(N,9,4.2,t*.08,.5);st.db=.8;st.glow=.5;st.cam=[0,2.4,12.5];
+            st.tr='spiral';st.idle='bob';
         }break;
       case 'eco':
-        st.lab='sec';st.cam=[0,3.2,13.5];
-        if(ui.eco===1){scatter(N,5);}
-        else if(ui.eco===2){ring(N,5,3.7,t*.05);st.db=1;st.glow=.7;st.spokes=.7;st.pulse='spokes';st.ex.db=1;}
-        else{ring(N,5,3.7,t*.16);st.db=1.15;st.glow=1;st.spokes=.85;st.mesh=.5;st.pulse='spokes';st.ex.db=1;allC(N,'acc');}
+        st.lab='sec';st.cam=[0,3.2,13.5];st.move='orbit';st.key='eco:'+ui.eco;
+        if(ui.eco===1){scatter(N,5);st.tr='scatter';st.spin='fast';}
+        else if(ui.eco===2){ring(N,5,3.7,t*.05);st.db=1;st.glow=.7;st.spokes=.7;st.pulse='spokes';st.ex.db=1;st.tr='implode';st.scan=1;}
+        else{ring(N,5,3.7,t*.16);st.db=1.15;st.glow=1;st.spokes=.85;st.mesh=.5;st.pulse='spokes';st.ex.db=1;allC(N,'acc');
+          st.tr='spiral';st.idle='breathe';st.spin='sync';st.spread=1.3;st.tint='cool';}
         break;
       case 'casos':{
         const P=[[-1.75,1.2,0],[1.75,1.2,0],[-1.75,-1.2,0],[1.75,-1.2,0]];
         N.forEach((n,i)=>{if(i<4)n.p=P[i];else n.v=0;});
         st.lab='case';
         if(ui.caseSel==null)allC(N,'acc');else{N[ui.caseSel].c='acc';N[ui.caseSel].s=1.35;}
-        st.mesh=.25;st.meshPairs=[[0,1],[1,3],[3,2],[2,0]];st.cam=[0,.3,12];break;}
+        st.mesh=.25;st.meshPairs=[[0,1],[1,3],[3,2],[2,0]];st.cam=[0,.3,12];
+        st.tr='flip';st.shape='card';st.spin='face';st.camK=1.2;break;}
       case 'integracao':
-        st.lab='sys';st.labOp=.9;st.cam=[0,3.4,13.5];
-        if(ui.integ===1){scatter(N);}
-        else{ring(N,9,4.6,t*(ui.integ===4?.14:.06));st.db=1;st.ex.db=1;st.spokes=.7;st.glow=.6;
+        st.lab='sys';st.labOp=.9;st.cam=[0,3.4,13.5];st.key='integ:'+(ui.integ===1?'antes':'depois');
+        if(ui.integ===1){scatter(N);st.tr='scatter';st.spin='fast';}
+        else{ring(N,9,4.6,t*(ui.integ===4?.14:.06));st.db=1;st.ex.db=1;st.spokes=.7;st.glow=.6;st.tr='gather';st.spin='slow';st.move='orbit';
           if(ui.integ>=3)st.mesh=.5;
-          if(ui.integ===4){st.pulse='spokes';allC(N,'acc');st.glow=1;st.db=1.15;}}
+          if(ui.integ===4){st.pulse='spokes';allC(N,'acc');st.glow=1;st.db=1.15;st.spin='sync';st.scan=1;st.pulseSpeed=.55;st.tint='cool';}}
         break;
-      case 'simples': ring(N,9,5.4,t*.12);st.db=1.5;st.glow=1;st.spokes=.35;st.pulse='spokes';st.ex.db=1;st.cam=[0,1.8,8.6];break;
+      case 'simples': ring(N,9,5.4,t*.12);st.db=1.5;st.glow=1;st.spokes=.35;st.pulse='spokes';st.ex.db=1;st.cam=[0,1.8,8.6];
+        st.tr='spiral';st.spin='sync';st.idle='breathe';st.move='orbit';st.spread=1.2;st.scan=1;st.tint='cool';break;
       case 'pd': {
         ring(N,9,4.2,t*.1,.6);st.db=1;st.glow=.8;st.mesh=.35;st.spokes=.3;st.cam=[0,7.5,9.5];
+        st.tr='rise';st.shape='tile';st.idle='wave';st.move='crane';st.camK=.5;
         const f=ui.pd;
-        if(f==='sistemas'){st.db=1.4;st.glow=1;st.spokes=.8;st.lab='sys';st.labOp=.9;}
+        if(f==='sistemas'){st.db=1.4;st.glow=1;st.spokes=.8;st.lab='sys';st.labOp=.9;st.scan=1;}
         else if(f==='automacoes'){st.pulse='spokes';st.mesh=.7;allC(N,'acc');}
         else if(f==='gestao'){N[4].c='amb';}
         else if(f==='processos'){N.forEach((n,i)=>{if(i%3===0)n.c='acc';});}
         else allC(N,'acc');
         break;}
     }
+    if(!st.key) st.key=active;
     return st;
   }
 
+  /* transições: cada nó vai da posição atual até o alvo por uma curva (Bézier quadrática) com atraso próprio */
+  const EASE={io:p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2,out:p=>1-Math.pow(1-p,3),
+    back:p=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(p-1,3)+c1*Math.pow(p-1,2);}};
+  const STYLE={
+    drift:  {dur:1.8,delay:'random',ctrl:'up',h:.8,ease:'io',flip:null},
+    cascade:{dur:1.1,delay:'index',ctrl:'up',h:2.2,ease:'out',flip:'x'},
+    sweep:  {dur:1.2,delay:'x',ctrl:'toward',h:1.2,ease:'io',flip:null},
+    spiral: {dur:1.8,delay:'index',ctrl:'swirl',h:2.6,ease:'io',flip:'y'},
+    implode:{dur:1.6,delay:'index',ctrl:'center',h:0,ease:'io',flip:null},
+    flip:   {dur:1.25,delay:'index',ctrl:'toward',h:2.5,ease:'back',flip:'x'},
+    gather: {dur:1.6,delay:'radial',ctrl:'swirl',h:1.5,ease:'io',flip:'y'},
+    rise:   {dur:1.6,delay:'random',ctrl:'up',h:3,ease:'out',flip:null},
+    scatter:{dur:1.3,delay:'random',ctrl:'out',h:2,ease:'out',flip:'z'},
+    calm:   {dur:.7,delay:'none',ctrl:'none',h:0,ease:'io',flip:null}
+  };
+  const SHAPE={cube:new THREE.Vector3(1,1,1),card:new THREE.Vector3(1.6,1.08,.16),tile:new THREE.Vector3(1.3,.22,1.3)};
+  const hash=x=>{const s=Math.sin(x*127.1+311.7)*43758.5453;return s-Math.floor(s);};
+  const wrap=a=>a-Math.PI*2*Math.round(a/(Math.PI*2));
+  const B=new THREE.Vector3(),C=new THREE.Vector3(),M=new THREE.Vector3(),D=new THREE.Vector3();
+  let trKey=null,trT0=0,tr=STYLE.drift,first=true;
+
+  function ctrl(out,A,Bv){
+    M.addVectors(A,Bv).multiplyScalar(.5);
+    const h=tr.h;
+    switch(tr.ctrl){
+      case 'up': out.copy(M);out.y+=2*h;break;
+      case 'toward': out.copy(M);out.z+=2*h;break;
+      case 'swirl': D.subVectors(Bv,A);out.set(-D.z,0,D.x);if(out.lengthSq()<1e-4)out.set(1,0,0);
+        out.normalize().multiplyScalar(2*h).add(M);out.y+=h*.6;break;
+      case 'center': out.copy(M).multiplyScalar(-1);break;
+      case 'out': out.copy(M);if(out.lengthSq()<.01)out.set(0,1,0);out.normalize().multiplyScalar(2*h).add(M);break;
+      default: out.copy(M);
+    }
+  }
+  // flat: deitada no plano do banco de dados (vira elipse em perspectiva); senão fica de frente para a câmera
+  function spawnWave(pos,col,max,flat){const w=waves[wi++%waves.length];w.m.position.copy(pos);w.t0=rt;w.max=max;w.flat=flat;w.m.material.color.copy(COL[col]);}
+  function startTransition(st){
+    tr=reduce?STYLE.calm:STYLE[st.tr];trT0=rt;trKey=st.key;
+    nodes.forEach((n,i)=>{
+      const p=st.n[i].p;
+      if(first&&p) n.from.set(p[0]*2.2,p[1]*2.2-2,p[2]*2.2+3);
+      else n.from.copy(n.g.position).sub(n.off);
+      let d=0;
+      if(tr.delay==='index') d=i*.06;
+      else if(tr.delay==='x') d=p?(p[0]+6)*.05:0;
+      else if(tr.delay==='radial') d=Math.hypot(n.from.x,n.from.z)*.05;
+      else if(tr.delay==='random') d=hash(i+trT0)*.35;
+      n.delay=d;
+    });
+    if(!first&&!reduce){warp=1; if(st.db>.5||st.tr==='scatter') spawnWave(center,'acc',4.2,true);}
+    first=false;
+  }
+
   /* loop */
-  const cur={db:0,glow:.3,spokes:0,chain:0,mesh:0,pulse:0,ex:{A:0,B:0,C:0,trava:0,db:0}};
-  const camPos=new THREE.Vector3(0,1,14),look=new THREE.Vector3(),tv=new THREE.Vector3(),tc=new THREE.Color(),center=new THREE.Vector3();
-  let mx=0,my=0,rotY=0,dragging=false,lastX=0,t=0,last=performance.now();
+  const cur={db:0,glow:.3,spokes:0,chain:0,mesh:0,pulse:0,spread:1,scan:0,ex:{A:0,B:0,C:0,trava:0,db:0}};
+  const camPos=new THREE.Vector3(0,1,14),look=new THREE.Vector3(),tv=new THREE.Vector3(),tc=new THREE.Color(),center=new THREE.Vector3(),
+    off=new THREE.Vector3(),tq=new THREE.Quaternion(),pulseCol=COL.ice.clone();
+  let mx=0,my=0,rotY=0,dragging=false,lastX=0,t=0,rt=0,phase=0,warp=0,last=performance.now();
 
   addEventListener('pointermove',e=>{mx=e.clientX/innerWidth*2-1;my=e.clientY/innerHeight*2-1;});
   canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.classList.add('drag');});
@@ -562,10 +671,11 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   addEventListener('resize',resize);resize();
 
   const np=i=>nodes[i].sc>.25?nodes[i].g.position:null;
-  function fill(obj,pairs,getB){
+  // f: fração desenhada de cada linha (0 a 1), para as ligações "crescerem" depois que os nós chegam
+  function fill(obj,pairs,getB,f){
     const a=obj.geometry.attributes.position.array;let c=0;
-    for(const pr of pairs){if(c>=obj.max)break;const A=np(pr[0]),B=getB?getB(pr[1]):np(pr[1]);if(!A||!B)continue;
-      a[c*6]=A.x;a[c*6+1]=A.y;a[c*6+2]=A.z;a[c*6+3]=B.x;a[c*6+4]=B.y;a[c*6+5]=B.z;c++;}
+    for(const pr of pairs){if(c>=obj.max)break;const A=np(pr[0]),Bp=getB?getB(pr[1]):np(pr[1]);if(!A||!Bp)continue;
+      a[c*6]=A.x;a[c*6+1]=A.y;a[c*6+2]=A.z;a[c*6+3]=A.x+(Bp.x-A.x)*f;a[c*6+4]=A.y+(Bp.y-A.y)*f;a[c*6+5]=A.z+(Bp.z-A.z)*f;c++;}
     obj.geometry.setDrawRange(0,c*2);obj.geometry.attributes.position.needsUpdate=true;}
   const ease=(o,k,key,to)=>{o[key]+=(to-o[key])*k;};
 
@@ -573,10 +683,12 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     requestAnimationFrame(frame);
     if(document.hidden){last=now;return;}
     const dt=Math.min(.05,(now-last)/1000);last=now;
-    const ms=reduce?.25:1; t+=dt*ms;
+    const ms=reduce?.25:1; t+=dt*ms; rt+=dt;
     const k=1-Math.exp(-dt*2.8);
     const st=getState(t);
-    const wide=innerWidth>900;
+    if(st.key!==trKey) startTransition(st);
+    const wide=innerWidth>900, since=rt-trT0;
+    const draw=d=>reduce?1:EASE.out(Math.min(1,Math.max(0,(since-d)/1.1)));
 
     root.position.x+=((wide?Math.min(2.7,camera.aspect*1.6):0)-root.position.x)*k;
     root.position.y+=((wide?0:1.3)-root.position.y)*k;
@@ -584,56 +696,124 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     root.rotation.y=rotY;
 
     nodes.forEach((n,i)=>{
-      const s=st.n[i];
-      if(s.p){tv.set(s.p[0],s.p[1]+Math.sin(t*.9+i*1.7)*.09,s.p[2]);n.g.position.lerp(tv,k);}
-      n.sc+=((s.v?s.s:0)-n.sc)*k;
-      n.g.scale.setScalar(Math.max(n.sc,.0001));n.g.visible=n.sc>.01;
-      n.g.rotation.y+=n.spin*dt*ms;n.g.rotation.x+=n.spin*.35*dt*ms;
+      const s=st.n[i], p=Math.min(1,Math.max(0,(since-n.delay)/tr.dur));
+      if(s.p){
+        B.set(s.p[0],s.p[1],s.p[2]);
+        if(p<1){const e=EASE[tr.ease](p),u=1-e,A=n.from;ctrl(C,A,B);
+          n.g.position.set(u*u*A.x+2*u*e*C.x+e*e*B.x,u*u*A.y+2*u*e*C.y+e*e*B.y,u*u*A.z+2*u*e*C.z+e*e*B.z);}
+        else n.g.position.copy(B);
+        off.set(0,0,0);
+        switch(st.idle){
+          case 'wave': off.y=Math.sin(t*2.1-B.x*.9-B.z*.9)*.24;break;
+          case 'bob': off.y=Math.sin(t*1.2+i*.8)*.3;break;
+          case 'breathe': {const b=.06*Math.sin(t*1.8);off.set(B.x*b,Math.sin(t*.9+i*1.7)*.06,B.z*b);break;}
+          default: off.y=Math.sin(t*.9+i*1.7)*.09;
+        }
+        n.off.lerp(off,Math.min(1,k*2));
+        n.g.position.add(n.off);
+        if(s.shake&&!reduce){n.g.position.x+=Math.sin(t*37+i)*.05;n.g.position.y+=Math.cos(t*29+i)*.04;}
+      }
+
+      // escala com mola: os nós entram com um leve "salto", cada um no seu tempo
+      let tgt=s.v?s.s:0;
+      if(st.idle==='breathe'&&s.v) tgt*=1+.08*Math.sin(t*2.4);
+      if(p<=0&&n.sc<.05) tgt=0;
+      n.sv+=((tgt-n.sc)*90-n.sv*12)*dt; n.sc+=n.sv*dt;
+      n.g.scale.setScalar(Math.max(n.sc,.0001)); n.g.visible=n.sc>.01;
+      n.shape.lerp(SHAPE[st.shape],k); n.body.scale.copy(n.shape);
+
+      const sp=n.spin*dt*ms;
+      if(st.spin==='free'){n.rx+=sp*.35;n.ry+=sp;}
+      else if(st.spin==='fast'){n.rx+=sp*1.2;n.ry+=sp*2.8;}
+      else if(st.spin==='slow'){n.rx+=sp*.08;n.ry+=sp*.25;}
+      else{ // sync: todos giram juntos, como um sistema só · face: cartões virados para a câmera
+        const tx=st.spin==='sync'?t*.35:.12+Math.sin(t*.7+i)*.08, ty=st.spin==='sync'?t*.55:-.25+Math.sin(t*.5+i*1.3)*.2;
+        n.rx+=wrap(tx-n.rx)*k*1.5;n.ry+=wrap(ty-n.ry)*k*1.5;}
+      const fl=(p<1&&tr.flip)?EASE.io(p)*Math.PI*2*n.flipDir:0;
+      n.body.rotation.set(n.rx+(tr.flip==='x'?fl:0),n.ry+(tr.flip==='y'?fl:0),tr.flip==='z'?fl:0);
+
       const col=COL[s.c];
       n.em.color.lerp(col,k);n.coreM.color.lerp(col,k);
       n.coreM.opacity+=((s.c==='dim'?0:.95)-n.coreM.opacity)*k;
-      n.mat.emissive.lerp(tc.copy(col).multiplyScalar(s.c==='dim'?.04:.2),k);
-      if(labels){for(const set in labels){const sp=labels[set][i];if(!sp)continue;
-        const to=(st.lab===set?st.labOp:0)*(s.v?1:0);sp.material.opacity+=(to-sp.material.opacity)*k;sp.visible=sp.material.opacity>.01;
-        sp.position.set(n.g.position.x,n.g.position.y+.55*n.sc+.42,n.g.position.z);}}
+      n.mat.emissive.lerp(tc.copy(col).multiplyScalar(s.c==='dim'?.04:.22),k);
+      const go=(s.c==='dim'?.08:s.c==='amb'?.75:.42)*(1+pulseBoost*.8);
+      n.glow.material.opacity+=(go-n.glow.material.opacity)*k;
+      n.glow.material.color.lerp(col,k);
+      n.glow.scale.setScalar(1.7+(s.c==='amb'?.35*Math.sin(t*5):0));
+      if(labels){for(const set in labels){const lb=labels[set][i];if(!lb)continue;
+        const to=(st.lab===set?st.labOp:0)*(s.v?1:0);lb.material.opacity+=(to-lb.material.opacity)*k;lb.visible=lb.material.opacity>.01;
+        lb.position.set(n.g.position.x,n.g.position.y+.55*n.sc*n.shape.y+.42,n.g.position.z);}}
     });
 
     ease(cur,k,'db',st.db);ease(cur,k,'glow',st.glow);ease(cur,k,'spokes',st.spokes);ease(cur,k,'chain',st.chain);ease(cur,k,'mesh',st.mesh);
-    db.scale.setScalar(Math.max(cur.db,.0001));db.visible=cur.db>.01;db.rotation.y+=dt*.25*ms;
-    ringMat.opacity=.35+.6*cur.glow;dbMat.emissiveIntensity=.2+.7*cur.glow;dbLight.intensity=1.8*cur.glow*cur.db;
+    ease(cur,k,'spread',st.spread);ease(cur,k,'scan',st.scan);
+    db.scale.setScalar(Math.max(cur.db,.0001));db.visible=cur.db>.01;db.rotation.y+=dt*.08*ms;
+    layers.forEach((L,j)=>{L.position.y=(j-1)*.56*cur.spread+(cur.spread>1.05?Math.sin(t*1.6+j*1.2)*.05:0);L.rotation.y+=dt*ms*LSPIN[j];});
+    ringMat.opacity=.35+.6*cur.glow;dbMat.emissiveIntensity=.2+.7*cur.glow;dbLight.intensity=1.8*cur.glow*cur.db;rimM.opacity=.25+.65*cur.glow;
+    scan.position.y=Math.sin(t*1.4)*.78*cur.spread;scanM.opacity=cur.scan*.85;
+    dbGlow.material.opacity=.32*cur.glow*Math.min(1,cur.db)*(1+.15*Math.sin(t*2));
     const dbOn=cur.db>.15;const dbP=()=>dbOn?center:null;
 
     const vis=[];for(let i=0;i<9;i++)if(st.n[i].v)vis.push(i);
-    fill(spokes,vis.map(i=>[i,0]),dbP);spokes.material.opacity=cur.spokes*Math.min(1,cur.db);
-    fill(chain,CHAIN);chain.material.opacity=cur.chain;chain.material.color.lerp(COL[st.chainCol],k);
+    fill(spokes,vis.map(i=>[i,0]),dbP,draw(.35));spokes.material.opacity=cur.spokes*Math.min(1,cur.db);
+    fill(chain,CHAIN,null,draw(.2));chain.material.opacity=cur.chain;chain.material.color.lerp(COL[st.chainCol],k);
     let mp=st.meshPairs;if(!mp){mp=[];const n=vis.length;for(let a=0;a<n;a++){mp.push([vis[a],vis[(a+1)%n]]);if(n>4)mp.push([vis[a],vis[(a+2)%n]]);}}
-    fill(mesh,mp);mesh.material.opacity=cur.mesh;
+    fill(mesh,mp,null,draw(.5));mesh.material.opacity=cur.mesh;
 
-    // pulsos de dados
+    // pulsos de dados: [início, fim, até onde chegam]. No gargalo eles se acumulam antes do Setor B
     const paths=[];
-    if(st.pulse==='spokes'&&dbOn)vis.forEach(i=>{const A=np(i);if(A)paths.push([A,center]);});
-    if(st.pulse==='chain')CHAIN.forEach(([a,b])=>{const A=np(a),B=np(b);if(A&&B)paths.push([A,B]);});
+    if(st.pulse==='spokes'&&dbOn)vis.forEach(i=>{const A=np(i);if(A)paths.push([A,center,1]);});
+    if(st.pulse==='chain')CHAIN.forEach(([a,b])=>{const A=np(a),Bp=np(b);if(A&&Bp)paths.push([A,Bp,1]);});
+    if(st.pulse==='jam')CHAIN.forEach(([a,b])=>{if(a===5||a>=6)return;const A=np(a),Bp=np(b);if(A&&Bp)paths.push([A,Bp,b===5?.78:1]);});
     pulseBoost=Math.max(0,pulseBoost-dt*.8);
     ease(cur,k,'pulse',paths.length?1:0);
-    pulses.forEach((p,j)=>{
-      if(!paths.length){p.material.opacity=0;p.visible=false;return;}
-      const pa=paths[j%paths.length];let u=(t*.38+j*.618)%1;if(j%2)u=1-u;
-      p.position.lerpVectors(pa[0],pa[1],u);p.visible=true;
-      p.material.opacity=cur.pulse*Math.sin(u*Math.PI)*(1+pulseBoost);
-      p.scale.setScalar(1+pulseBoost*.8);
+    pulseCol.lerp(st.pulse==='jam'?COL.amb:COL.ice,k);
+    phase+=dt*ms*st.pulseSpeed;
+    pulses.forEach((trail,j)=>{
+      if(!paths.length){trail.forEach(s=>s.visible=false);return;}
+      const pa=paths[j%paths.length], u0=(phase+j*.618)%1, rev=j%2&&pa[2]===1;
+      trail.forEach((s,q)=>{
+        const u=u0-q*.035;if(u<0){s.visible=false;return;}
+        let uu=rev?1-u:u;
+        if(pa[2]<1)uu=Math.min(u,pa[2]-q*.025+.012*Math.sin(t*9+j));
+        s.position.lerpVectors(pa[0],pa[1],uu);s.visible=true;
+        s.material.color.copy(pulseCol);
+        s.material.opacity=cur.pulse*Math.sin(u*Math.PI)*(1-q*.24)*(1+pulseBoost);
+        s.scale.setScalar((q?.3-.05*q:.46)*(1+pulseBoost*.8));
+      });
     });
 
     if(ex){for(const key in ex){ease(cur.ex,k,key,st.ex[key]);const sp=ex[key];sp.material.opacity=cur.ex[key];sp.visible=cur.ex[key]>.01;}
-      ex.db.position.set(0,.95*cur.db+.75,0);}
+      ex.db.position.set(0,(.95+.3*(cur.spread-1))*cur.db+.75,0);}
 
-    dust.rotation.y+=dt*.012*ms;
+    warp=Math.max(0,warp-dt*1.1);
+    dust.rotation.y+=dt*(.012+warp*.22)*ms;dust.material.opacity=.55+warp*.3;
+    bgCur.lerp(TINT[st.tint],k*.6);renderer.setClearColor(bgCur,1);scene.fog.color.copy(bgCur);
+
+    // câmera: cada seção tem um movimento próprio e um "sopro" de zoom na troca de cena
     const par=reduce?0:1;
-    tv.set(st.cam[0]+mx*.9*par,st.cam[1]-my*.55*par,st.cam[2]*(wide?1:1.45));
-    camPos.lerp(tv,k*.8);
+    let cx=st.cam[0],cy=st.cam[1],cz=st.cam[2]*(wide?1:1.45);
+    if(!reduce){
+      if(st.move==='orbit'){const a=Math.sin(rt*.12)*.3,x=cx*Math.cos(a)+cz*Math.sin(a);cz=-cx*Math.sin(a)+cz*Math.cos(a);cx=x;}
+      else if(st.move==='crane')cy+=Math.sin(rt*.22)*.7;
+      else if(st.move==='dolly')cz*=1-.07*Math.sin(rt*.25);
+    }
+    tv.set(cx+mx*.9*par,cy-my*.55*par,cz);
+    camPos.lerp(tv,k*st.camK);
     tv.set(st.look[0],st.look[1],st.look[2]);
     look.lerp(tv,k);
     camera.position.copy(camPos);
     camera.lookAt(look);
+    const fov=40+Math.sin(warp*Math.PI)*3.5;
+    if(Math.abs(camera.fov-fov)>.01){camera.fov=fov;camera.updateProjectionMatrix();}
+
+    while(fxQ.length){const f=fxQ.shift();if(reduce)continue;
+      spawnWave(f.at==='db'?center:nodes[f.at].g.position,f.col,f.at==='db'?4.6:1.2,f.at==='db');if(f.at==='db')warp=Math.max(warp,.6);}
+    tq.copy(root.quaternion).invert().multiply(camera.quaternion);
+    waves.forEach(w=>{const a=(rt-w.t0)/w.dur;if(a<0||a>1){w.m.visible=false;return;}
+      w.m.visible=true;w.m.scale.setScalar(.4+w.max*(1-Math.pow(1-a,3)));w.m.material.opacity=(1-a)*(1-a)*.5;
+      if(w.flat)w.m.rotation.set(-Math.PI/2,0,0);else w.m.quaternion.copy(tq);});
+
     renderer.render(scene,camera);
   }
   requestAnimationFrame(frame);
