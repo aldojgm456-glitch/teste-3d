@@ -1,215 +1,212 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>NORT · Como funciona</title>
+<title>NORT: como funciona</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<script>document.documentElement.classList.add('js')</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
 <style>
-/* Layout: cena 3D fixa ocupando a tela; o texto rola numa coluna à esquerda e cada seção muda a cena. Visual escuro único, de propósito. */
+/* Página como formulário contínuo de escritório de contabilidade: papel com faixas verdes, tinta azul de caneta e vermelho de carimbo.
+   A cena 3D é o elemento marcante (os dados ficam sobre a folha impressa); o resto fica quieto.
+   Vermelho só para problema (gargalo, isolado); azul para o que está ligado e para ações. */
 :root{
-  --bg:#070B14; --bg2:#0C1322; --fg:#E7EBF3; --fg2:#C3CCDC; --muted:#8F9BB3;
-  --line:rgba(143,155,179,.22); --acc:#7AA7FF; --acc-ink:#0A1630; --amb:#F2B84B;
-  --panel:rgba(10,16,30,.66);
-  --display:"Unbounded","Arial Black",system-ui,sans-serif;
-  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-  color-scheme:dark;
+  --paper:#F2F6EC; --band:#DFEBD6; --ink:#1C2540; --ink2:#3A4458; --muted:#5E6779;
+  --pen:#2340C4; --pen-dark:#1A2F96; --stamp:#C2362B;
+  --line:rgba(28,37,64,.16); --sheet:rgba(250,252,246,.94); --card:#FCFDF9;
+  --type:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
 }
-html{background:var(--bg);scroll-behavior:smooth}
-body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+html{background:var(--paper);scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.6 var(--type);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:pan-y;cursor:grab}
 #gl.drag{cursor:grabbing}
 .scrim{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(90deg,var(--bg) 0%,rgba(7,11,20,.9) 30%,rgba(7,11,20,.35) 52%,rgba(7,11,20,0) 66%)}
+  background:linear-gradient(90deg,var(--paper) 0%,rgba(242,246,236,.94) 30%,rgba(242,246,236,.45) 52%,rgba(242,246,236,0) 66%)}
 .nogl #gl{display:none}
-.nogl .scrim{background:radial-gradient(1200px 700px at 75% 40%,#13213f 0%,var(--bg) 70%)}
+.nogl .scrim{background:repeating-linear-gradient(180deg,var(--paper) 0 48px,var(--band) 48px 96px)}
 
 /* topo */
 header.top{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:6;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  background:linear-gradient(180deg,rgba(7,11,20,.95) 0%,rgba(7,11,20,.7) 70%,rgba(7,11,20,0) 100%)}
-.bar{display:flex;align-items:center;gap:20px;height:64px;max-width:1400px;margin:0 auto}
-.brand{font:700 15px/1 var(--display);letter-spacing:.14em;color:var(--fg);text-decoration:none;display:flex;align-items:center;gap:10px}
-.brand i{width:12px;height:12px;border:2px solid var(--acc);transform:rotate(45deg);display:inline-block}
+  background:linear-gradient(180deg,rgba(242,246,236,.97) 0%,rgba(242,246,236,.86) 70%,rgba(242,246,236,0) 100%)}
+.bar{display:flex;align-items:center;gap:22px;height:64px;max-width:1400px;margin:0 auto}
+.brand{font:800 18px/1 var(--type);font-stretch:125%;letter-spacing:.01em;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:10px}
+.brand i{width:11px;height:11px;border:2px solid var(--pen);border-radius:50%;display:inline-block}
 nav.links{display:flex;gap:2px;min-width:0}
-nav.links a{font:500 11.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-  padding:9px 10px;border-radius:6px;text-decoration:none;white-space:nowrap;transition:color .2s,background .2s}
-nav.links a:hover{color:var(--fg)}
-nav.links a.on{color:var(--fg);background:rgba(122,167,255,.13)}
-.count{margin-left:auto;font:500 13px/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.count b{color:var(--fg);font-weight:500}
-.progress{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--acc);transform-origin:0 50%;transform:scaleX(0)}
+nav.links a{font:500 14.5px/1 var(--type);font-stretch:87.5%;color:var(--muted);padding:9px 9px;text-decoration:none;white-space:nowrap;transition:color .2s,box-shadow .2s}
+nav.links a:hover{color:var(--ink)}
+nav.links a.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--pen)}
+.count{margin-left:auto;font:500 14px/1 var(--type);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.count b{color:var(--ink);font-weight:700}
+.progress{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--pen);transform-origin:0 50%;transform:scaleX(0)}
 @media (max-width:1180px){nav.links{display:none}}
 
 /* legenda da cena */
 .legend{position:fixed;z-index:3;right:max(24px,calc(env(safe-area-inset-right,0px) + 24px));bottom:calc(env(safe-area-inset-bottom,0px) + 24px);
   pointer-events:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
-.legend .now{font:500 13px/1.3 var(--mono);color:var(--fg);background:var(--panel);border:1px solid var(--line);padding:8px 12px;border-radius:6px;backdrop-filter:blur(6px)}
-.legend .hint{font:400 11.5px/1 var(--mono);color:var(--muted);letter-spacing:.06em}
+.legend .now{font:600 14px/1.3 var(--type);color:var(--ink);background:var(--sheet);border:1px solid var(--line);padding:8px 12px;border-radius:4px}
+.legend .hint{font:400 13px/1.3 var(--type);color:var(--muted)}
+.legend .hint b{color:var(--pen);font-weight:600}
+.legend .hint .mo{display:none}
 
 /* conteúdo */
 main{position:relative;z-index:2;pointer-events:none;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sec{min-height:94vh;display:flex;align-items:center;padding-block:112px 72px;max-width:1400px;margin:0 auto}
-.inner{pointer-events:auto;width:100%;max-width:570px;min-width:0;margin-left:clamp(0px,4vw,56px);display:flex;flex-direction:column;gap:22px}
-.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--acc);display:flex;gap:12px;align-items:center}
-.eyebrow span{color:var(--muted)}
-h1,h2,h3{text-wrap:balance;margin:0}
-h1{font:600 clamp(46px,7.2vw,104px)/.98 var(--display);letter-spacing:-.025em}
-h1 em{font-style:normal;color:var(--acc)}
-h2{font:500 clamp(28px,3.3vw,44px)/1.12 var(--display);letter-spacing:-.015em}
-h3{font:600 19px/1.3 var(--body)}
-p{margin:0;color:var(--fg2);font-size:17px;max-width:62ch}
-p.lead{font-size:clamp(18px,1.6vw,21px);color:var(--fg)}
-p b,li b{color:var(--fg);font-weight:600}
-.note{font:400 13px/1.4 var(--mono);color:var(--muted)}
+.inner{pointer-events:auto;width:100%;max-width:560px;min-width:0;margin-left:clamp(0px,4vw,56px);display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{text-wrap:balance;margin:0;color:var(--ink)}
+h1{font:800 clamp(48px,7.4vw,108px)/.94 var(--type);font-stretch:125%;letter-spacing:-.03em}
+h2{font:750 clamp(28px,3vw,40px)/1.1 var(--type);font-stretch:112.5%;letter-spacing:-.015em}
+h3{font:650 19px/1.3 var(--type)}
+p{margin:0;color:var(--ink2);font-size:17px;max-width:60ch}
+p.lead{font-size:clamp(19px,1.5vw,21px);color:var(--ink)}
+p b,li b{color:var(--ink);font-weight:650}
+.note{font:400 14px/1.45 var(--type);color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 
-.btn{appearance:none;border:1px solid var(--acc);background:var(--acc);color:var(--acc-ink);font:600 15px/1 var(--body);
-  padding:14px 20px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-flex;gap:10px;align-items:center;transition:transform .15s,background .2s}
-.btn:hover{transform:translateY(-1px)}
-.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
-.btn.ghost:hover{border-color:var(--acc)}
-.btn.ok{background:transparent;color:var(--acc);border-color:var(--acc)}
-:focus-visible{outline:2px solid var(--amb);outline-offset:3px}
+.btn{appearance:none;border:1.5px solid var(--pen);background:var(--pen);color:#fff;font:600 15px/1 var(--type);
+  padding:13px 20px;border-radius:6px;cursor:pointer;text-decoration:none;display:inline-flex;gap:10px;align-items:center;transition:background .2s,border-color .2s}
+.btn:hover{background:var(--pen-dark);border-color:var(--pen-dark)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.ok{background:transparent;color:var(--pen);border-color:var(--pen)}
+:focus-visible{outline:2px solid var(--pen);outline-offset:3px}
 
 .tags{display:flex;flex-wrap:wrap;gap:6px}
-.tag{font:400 12px/1 var(--mono);color:var(--fg2);border:1px solid var(--line);padding:6px 8px;border-radius:4px}
-.badge{font:500 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--amb)}
+.tag{font:500 13.5px/1 var(--type);font-stretch:87.5%;color:var(--ink2);background:rgba(28,37,64,.06);padding:6px 8px;border-radius:3px}
+.badge{font:600 13.5px/1 var(--type);font-stretch:87.5%;color:var(--pen)}
 
+/* passos do levantamento: é uma sequência de verdade, por isso numerada */
 ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;counter-reset:s}
-ol.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:4px 12px;padding:14px 0;border-top:1px solid var(--line);color:var(--fg2)}
-ol.steps li::before{content:counter(s,decimal-leading-zero);font:500 13px/1.7 var(--mono);color:var(--acc)}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:36px 1fr;gap:4px 10px;padding:13px 0;border-top:1px solid var(--line);color:var(--ink2)}
+ol.steps li::before{content:counter(s) ".";font:800 16px/1.6 var(--type);font-stretch:125%;color:var(--pen)}
 
 /* listas selecionáveis */
 .pick{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .pick button{appearance:none;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);color:inherit;
-  padding:16px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;font:inherit;border-radius:0;transition:background .2s}
+  padding:15px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;font:inherit;border-radius:0;transition:background-color .2s,box-shadow .2s}
 .pick li:last-child button{border-bottom:1px solid var(--line)}
-.pick button:hover{background:rgba(122,167,255,.05)}
-.pick button[aria-pressed="true"]{background:rgba(122,167,255,.1)}
-.pick button[aria-pressed="true"] h3{color:var(--acc)}
+.pick button:hover{background-color:rgba(28,37,64,.035)}
+.pick button[aria-pressed="true"]{background-color:rgba(35,64,196,.07);box-shadow:inset 3px 0 0 var(--pen)}
+.pick button[aria-pressed="true"] h3{color:var(--pen)}
 .pick .head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
-.pick .cap{font:400 12px/1 var(--mono);color:var(--muted)}
+.pick .cap{font:500 13.5px/1 var(--type);font-stretch:87.5%;color:var(--muted)}
 .pick p{font-size:15.5px}
-.pick .k{font:500 12px/1.7 var(--mono);color:var(--acc)}
+.pick .k{font-weight:800;font-stretch:125%;color:var(--pen);margin-right:6px}
 
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
-.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:600 14px/1 var(--body);padding:10px 16px;border-radius:6px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--acc);color:var(--acc-ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;padding:3px;gap:3px;background:var(--card)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:600 14px/1 var(--type);padding:10px 16px;border-radius:4px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--pen);color:#fff}
 
-.cases{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.case{appearance:none;text-align:left;background:var(--panel);border:1px solid var(--line);color:inherit;border-radius:10px;padding:16px;cursor:pointer;
-  display:flex;flex-direction:column;gap:8px;font:inherit;position:relative;overflow:hidden;min-width:0}
-.case p{font-size:14.5px;line-height:1.5}
-.case[aria-pressed="true"]{border-color:var(--acc)}
-.case[aria-pressed="true"] h3{color:var(--acc)}
-.case .run{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--acc);transform:scaleX(0);transform-origin:0 50%}
+/* fichas pautadas: linha vermelha sob o título e pauta azul, como as fichas de arquivo do escritório */
+.cases,.pd{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.case,.pd button{--top:40px;appearance:none;text-align:left;font:inherit;color:inherit;cursor:pointer;min-width:0;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:8px;padding:12px 16px 16px;border:1px solid var(--line);border-radius:3px;background-color:var(--card);
+  background-image:linear-gradient(rgba(194,54,43,.55),rgba(194,54,43,.55)),repeating-linear-gradient(180deg,transparent 0 27px,rgba(35,64,196,.09) 27px 28px);
+  background-size:100% 1px,100% 100%;background-position:0 var(--top),0 var(--top);background-repeat:no-repeat;
+  transition:border-color .2s,box-shadow .2s}
+.case h3,.pd h3{min-height:calc(var(--top) - 12px);display:flex;align-items:flex-end;padding-bottom:6px;box-sizing:border-box}
+.case p,.pd p{font-size:14.5px;line-height:28px}
+.case:hover,.pd button:hover{border-color:rgba(28,37,64,.32)}
+.case[aria-pressed="true"],.pd button[aria-pressed="true"]{border-color:var(--pen);box-shadow:0 0 0 1px var(--pen)}
+.case[aria-pressed="true"] h3{color:var(--pen)}
+.case .run{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--pen);transform:scaleX(0);transform-origin:0 50%}
 .case.play .run{animation:run 1.4s ease-out forwards}
 @keyframes run{to{transform:scaleX(1)}}
+.pd button{--top:58px}
+.pd button .badge,.pd button .cap{position:absolute;top:12px;left:16px;font:600 13.5px/1 var(--type);font-stretch:87.5%}
+.pd button .cap{color:var(--muted)}
+.pd button.main h3{color:var(--pen)}
 
-.qa{display:flex;flex-direction:column;gap:0;margin:0}
+.qa{display:flex;flex-direction:column;margin:0}
 .qa div{padding:16px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
-.qa dt{font:600 17px/1.35 var(--body);color:var(--fg)}
-.qa dd{margin:0;color:var(--fg2)}
-.closing{font:500 clamp(18px,1.8vw,22px)/1.4 var(--display);color:var(--fg);letter-spacing:-.01em}
-.closing span{color:var(--acc)}
-
-.pd{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.pd button{appearance:none;text-align:left;font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.pd button.main{border-color:rgba(122,167,255,.55)}
-.pd button.main h3{color:var(--acc)}
-.pd button[aria-pressed="true"]{background:rgba(122,167,255,.14)}
-.pd p{font-size:14.5px;line-height:1.5}
-
-.big{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end}
-.big div{display:flex;flex-direction:column;gap:4px}
-.big strong{font:600 clamp(40px,4.4vw,60px)/1 var(--display);color:var(--fg);font-variant-numeric:tabular-nums}
-.big strong.a{color:var(--acc)}
-.big span{font:400 12px/1.3 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.qa dt{font:650 18px/1.35 var(--type);color:var(--ink)}
+.qa dd{margin:0;color:var(--ink2)}
+.closing{font:750 clamp(22px,2.2vw,30px)/1.22 var(--type);font-stretch:112.5%;letter-spacing:-.012em;color:var(--ink);max-width:22ch}
 
 footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px max(16px,env(safe-area-inset-right,0px)) calc(48px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
-  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font:400 12px/1.4 var(--mono);color:var(--muted);border-top:1px solid var(--line)}
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font:400 13.5px/1.4 var(--type);color:var(--muted);border-top:1px solid var(--line)}
 
 @media (max-width:900px){
-  .scrim{background:linear-gradient(180deg,rgba(7,11,20,.1) 0%,rgba(7,11,20,.35) 40%,rgba(7,11,20,.55) 100%)}
+  .scrim{background:linear-gradient(180deg,rgba(242,246,236,.05) 0%,rgba(242,246,236,.3) 40%,rgba(242,246,236,.5) 100%)}
   .sec{min-height:auto;padding-block:84px 24px}
   .sec:first-child{min-height:92vh;align-items:flex-end}
-  .inner{margin-left:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .inner{margin-left:0;background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:22px 18px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
   .legend{left:max(16px,env(safe-area-inset-left,0px));right:auto;align-items:flex-start;text-align:left;top:calc(env(safe-area-inset-top,0px) + 70px);bottom:auto}
-  .legend .hint{display:none}
+  .legend .hint .d{display:none}
+  .legend .hint .mo{display:inline}
+  .legend.later .hint{display:none}
 }
 @media (max-width:460px){.cases,.pd{grid-template-columns:1fr}}
 
 /* painel do ícone clicado */
-.legend .hint b{color:var(--acc);font-weight:500}
-.legend .hint .mo{display:none}
 .info{position:fixed;z-index:7;top:calc(env(safe-area-inset-top,0px) + 80px);right:max(24px,calc(env(safe-area-inset-right,0px) + 24px));
   width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 190px);overflow:auto;display:flex;flex-direction:column;gap:12px;
-  background:rgba(10,16,30,.84);border:1px solid rgba(122,167,255,.35);border-radius:14px;padding:20px 20px 16px;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 24px 60px rgba(0,0,0,.45);
+  background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:20px 20px 16px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 18px 44px rgba(28,37,64,.16);
   opacity:0;visibility:hidden;transform:translateY(-10px) scale(.96);transform-origin:top right;
   transition:opacity .3s,transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s .45s}
 .info.on{opacity:1;visibility:visible;transform:none;transition:opacity .3s,transform .45s cubic-bezier(.2,.8,.2,1),visibility 0s}
-.info::before{content:"";position:absolute;left:0;top:0;height:2px;width:100%;background:linear-gradient(90deg,var(--acc),transparent 80%)}
+.info::before{content:"";position:absolute;left:0;top:0;height:3px;width:100%;background:var(--pen)}
 .info [hidden]{display:none!important}
-.info h3{font:600 26px/1.15 var(--display);letter-spacing:-.01em;padding-right:34px}
+.info .eyebrow{font:600 13.5px/1.2 var(--type);font-stretch:87.5%;color:var(--pen);padding-right:40px}
+.info h3{font:800 26px/1.12 var(--type);font-stretch:112.5%;letter-spacing:-.01em;padding-right:34px}
 .info p{font-size:15px;line-height:1.55}
-.info .status{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);background:rgba(122,167,255,.09);border-radius:8px;padding:10px 12px}
-.info .status::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--acc);box-shadow:0 0 10px var(--acc)}
-.info .status.no{background:rgba(242,184,75,.09)}
-.info .status.no::before{background:var(--amb);box-shadow:0 0 10px var(--amb)}
-.info .mapbox{border:1px solid var(--line);border-radius:10px;padding:6px 8px 10px;
-  background:radial-gradient(130px 75px at 50% 46%,rgba(122,167,255,.13),transparent 72%)}
+.info .status{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:var(--ink);background:rgba(35,64,196,.07);border-radius:4px;padding:10px 12px}
+.info .status::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:var(--pen)}
+.info .status.no{background:rgba(194,54,43,.08)}
+.info .status.no::before{background:var(--stamp)}
+.info .mapbox{border:1px solid var(--line);border-radius:4px;padding:6px 8px 10px;
+  background:repeating-linear-gradient(180deg,#F8FAF4 0 14px,rgba(223,235,214,.75) 14px 28px)}
 .info .map{display:block;width:100%;height:auto;overflow:visible}
 .map line{stroke-width:1.2;stroke-linecap:round}
-.map line.ok{stroke:var(--acc);stroke-dasharray:3 4;animation:flow .9s linear infinite}
-.map line.no{stroke:var(--amb);stroke-dasharray:1.5 3;opacity:.85}
-.map path.x{stroke:var(--amb);stroke-width:1.4;stroke-linecap:round;fill:none}
-.map circle{fill:#9fbfff}
-.map circle.off{fill:#44547c}
-.map circle.warn{fill:var(--amb)}
-.map circle.me{fill:var(--acc);filter:drop-shadow(0 0 4px rgba(122,167,255,.9))}
-.map circle.me.no{fill:var(--amb);filter:drop-shadow(0 0 4px rgba(242,184,75,.9))}
-.map circle.ring{fill:none;stroke:var(--acc);stroke-width:1;transform-box:fill-box;transform-origin:center;animation:ring 1.8s ease-out infinite}
-.map circle.ring.no{stroke:var(--amb)}
-.map ellipse{fill:#14203a;stroke:var(--acc);stroke-width:1}
-.map text{font:500 6.5px var(--mono);fill:var(--muted)}
-.map text.h{fill:var(--fg2);font-size:7px;letter-spacing:.08em}
+.map line.ok{stroke:var(--pen);stroke-dasharray:3 4;animation:flow .9s linear infinite}
+.map line.no{stroke:var(--stamp);stroke-dasharray:1.5 3;opacity:.85}
+.map path.x{stroke:var(--stamp);stroke-width:1.4;stroke-linecap:round;fill:none}
+.map circle{fill:#7D869A}
+.map circle.off{fill:#C3C9D4}
+.map circle.warn{fill:var(--stamp)}
+.map circle.me{fill:var(--pen)}
+.map circle.me.no{fill:var(--stamp)}
+.map circle.ring{fill:none;stroke:var(--pen);stroke-width:1;transform-box:fill-box;transform-origin:center;animation:ring 1.8s ease-out infinite}
+.map circle.ring.no{stroke:var(--stamp)}
+.map ellipse{fill:var(--band);stroke:var(--pen);stroke-width:1}
+.map text{font:600 7px var(--type);font-stretch:87.5%;fill:var(--muted)}
+.map text.h{fill:var(--ink)}
 @keyframes flow{to{stroke-dashoffset:-7}}
 @keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(2.8);opacity:0}}
-.info .stat{display:flex;gap:8px;align-items:baseline;padding:4px 4px 0;font:400 11.5px/1 var(--mono);color:var(--muted)}
-.info .stat b{font:600 20px/1 var(--display);color:var(--fg);font-variant-numeric:tabular-nums}
-.info .stat.no b{color:var(--amb)}
+.info .stat{display:flex;gap:8px;align-items:baseline;padding:4px 4px 0;font:500 13px/1 var(--type);color:var(--muted)}
+.info .stat b{font:800 22px/1 var(--type);font-stretch:125%;color:var(--ink);font-variant-numeric:tabular-nums}
+.info .stat.no b{color:var(--stamp)}
 .info .tag.off{color:var(--muted);text-decoration:line-through;opacity:.75}
-.info .x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--fg);font-size:18px;line-height:1;cursor:pointer}
-.info .x:hover{border-color:var(--acc)}
-.info .x{z-index:2}
-.info .eyebrow{padding-right:40px}
+.info .x{position:absolute;z-index:2;top:12px;right:12px;width:32px;height:32px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
+.info .x:hover{border-color:var(--ink)}
 .info .nav{gap:8px}
 .info .nav #infoAct{margin-left:auto}
 .btn.sm{padding:9px 12px;font-size:13.5px}
 .info.swap>*{animation:swap .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--j,0)*45ms)}
 @keyframes swap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.tip{position:fixed;z-index:8;left:0;top:0;pointer-events:none;font:500 12px/1 var(--mono);color:var(--fg);background:var(--panel);
-  border:1px solid var(--line);padding:7px 10px;border-radius:6px;opacity:0;transition:opacity .15s;white-space:nowrap;backdrop-filter:blur(6px)}
+.tip{position:fixed;z-index:8;left:0;top:0;pointer-events:none;font:500 13px/1 var(--type);color:var(--ink);background:var(--sheet);
+  border:1px solid var(--line);padding:7px 10px;border-radius:4px;opacity:0;transition:opacity .15s;white-space:nowrap}
 .tip.on{opacity:1}
-.tip b{color:var(--acc);font-weight:500}
+.tip b{color:var(--pen);font-weight:650}
 @media (max-width:900px){
-  .legend .hint{display:block}.legend .hint .d{display:none}.legend .hint .mo{display:inline}
   .info{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));
     width:auto;max-height:55vh;transform:translateY(18px);transform-origin:bottom center}
 }
-@media (prefers-reduced-motion:reduce){.info,.info.on{transform:none;transition:opacity .2s,visibility 0s}.info.swap>*,.map line.ok,.map circle.ring{animation:none}}
 
-/* entrada do texto: cada item sobe em sequência quando a seção aparece */
-.js .sec .inner>*{opacity:0;transform:translate3d(0,22px,0);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0)*80ms)}
-.js .sec.in .inner>*{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.js .sec .inner>*{transform:none;transition-duration:.01s}}
+/* o único momento orquestrado: ao abrir a página, o título sai "impresso" linha a linha e o resto aparece depois */
+@keyframes print{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes show{from{opacity:0}to{opacity:1}}
+#topo h1{animation:print .9s steps(8,end) .2s both}
+#topo .inner>*:not(h1){animation:show .6s ease-out both;animation-delay:calc(1.05s + var(--i,0)*90ms)}
+
+@media (prefers-reduced-motion:reduce){
+  .info,.info.on{transform:none;transition:opacity .2s,visibility 0s}
+  .info.swap>*,.map line.ok,.map circle.ring,#topo h1,#topo .inner>*{animation:none}
+}
 </style>
 </head><body>
 
@@ -222,12 +219,12 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     <nav class="links" aria-label="Seções">
       <a href="#topo">Início</a><a href="#introducao">Introdução</a><a href="#fluxo">Fluxo</a><a href="#frentes">Frentes</a><a href="#eco">Ecossistema</a><a href="#casos">Exemplo</a><a href="#integracao">Integração</a><a href="#simples">Em palavras simples</a><a href="#pd">P&amp;D</a>
     </nav>
-    <div class="count"><b id="cnum">01</b> / 09</div>
+    <div class="count"><b id="cnum">1</b> de 9</div>
   </div>
   <div class="progress" id="prog"></div>
 </header>
 
-<div class="legend" aria-live="polite"><div class="now" id="legend">9 sistemas, cada um com seu cadastro</div><div class="hint"><span class="d"><b>clique nos ícones</b> · arraste para girar · role para avançar</span><span class="mo"><b>toque nos ícones 3D</b></span></div></div>
+<div class="legend" aria-live="polite"><div class="now" id="legend">9 sistemas, cada um com seu cadastro</div><div class="hint"><span class="d"><b>Clique nos ícones</b> para abrir. Arraste para girar.</span><span class="mo"><b>Toque nos ícones</b> para abrir.</span></div></div>
 
 <aside class="info" id="info" aria-hidden="true" aria-labelledby="infoTitle">
   <button class="x" type="button" id="infoClose" aria-label="Fechar">×</button>
@@ -244,12 +241,11 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 <main>
   <section class="sec" id="topo" data-title="Início">
     <div class="inner">
-      <div class="eyebrow">NORT <span>gestão · processos · sistemas · automações</span></div>
-      <h1>Como <em>funciona</em></h1>
+      <h1>Como funciona</h1>
       <p class="lead">Gestão, processos, sistemas e automações no escritório.</p>
       <p>Tudo começa pelo fluxo do próprio escritório.</p>
       <div class="row">
-        <a class="btn" href="#introducao">Começar ↓</a>
+        <a class="btn" href="#introducao">Começar</a>
         <button class="btn ghost" id="fs" type="button">Tela cheia</button>
       </div>
       <p class="note">Use as setas do teclado ou a rolagem para navegar.</p>
@@ -258,7 +254,6 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="introducao" data-title="Introdução">
     <div class="inner">
-      <div class="eyebrow">02 <span>Introdução</span></div>
       <h2>O escritório funciona a partir do seu próprio fluxo</h2>
       <p class="lead">Cada setor tem rotinas, ferramentas e gargalos próprios.</p>
       <p>É sobre isso que se apoiam as quatro frentes pedidas: <b>gestão</b>, <b>processos</b>, <b>sistemas</b> e <b>automações</b>. O peso maior está em automações e sistemas, onde o ganho de tempo é mais direto e onde eu mais me encaixaria.</p>
@@ -268,7 +263,6 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="fluxo" data-title="Fluxo">
     <div class="inner">
-      <div class="eyebrow">03 <span>Fluxo</span></div>
       <h2>Para implementar algo, é preciso ver o fluxo do escritório</h2>
       <p>Solução copiada de outro lugar costuma automatizar o passo errado. Por isso, antes de qualquer ferramenta, o fluxo do próprio escritório é entendido.</p>
       <ol class="steps">
@@ -284,7 +278,6 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="frentes" data-title="Frentes">
     <div class="inner">
-      <div class="eyebrow">04 <span>Frentes</span></div>
       <h2>As quatro frentes</h2>
       <p>O peso maior está em sistemas e automações, onde o ganho de tempo é mais direto. Clique em cada frente para ver na cena.</p>
       <ul class="pick" id="frentesList">
@@ -314,15 +307,14 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="eco" data-title="Ecossistema">
     <div class="inner">
-      <div class="eyebrow">05 <span>Ecossistema</span></div>
       <h2>Informações internas, setor por setor</h2>
       <p>Por se tratar de um escritório de contabilidade, a ideia principal é unir as informações internas e fazer com que elas se comuniquem.</p>
       <ul class="pick" id="ecoList">
-        <li><button type="button" data-e="1" aria-pressed="true"><span class="head"><h3><span class="k">1 · </span>Setores</h3></span>
+        <li><button type="button" data-e="1" aria-pressed="true"><span class="head"><h3><span class="k">1.</span>Setores</h3></span>
           <p>RH, Comercial, Atendimento, Fiscal e Contábil, cada um com as suas informações.</p></button></li>
-        <li><button type="button" data-e="2" aria-pressed="false"><span class="head"><h3><span class="k">2 · </span>Tudo no mesmo banco de dados</h3></span>
+        <li><button type="button" data-e="2" aria-pressed="false"><span class="head"><h3><span class="k">2.</span>Tudo no mesmo banco de dados</h3></span>
           <p>Do RH para o Comercial, para uma central de atendimento, do fiscal ao contábil: tudo no mesmo banco de dados da própria NORT.</p></button></li>
-        <li><button type="button" data-e="3" aria-pressed="false"><span class="head"><h3><span class="k">3 · </span>Um ecossistema próprio da NORT</h3></span>
+        <li><button type="button" data-e="3" aria-pressed="false"><span class="head"><h3><span class="k">3.</span>Um ecossistema próprio da NORT</h3></span>
           <p>Depois de entender o que o escritório precisa, começa a estruturação e a programação dos sistemas internos.</p>
           <span class="tags"><span class="tag">banco de dados próprio</span><span class="tag">hospedagem própria</span><span class="tag">domínio na internet</span></span></button></li>
       </ul>
@@ -331,7 +323,6 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="casos" data-title="Exemplo">
     <div class="inner">
-      <div class="eyebrow">06 <span>Exemplo</span></div>
       <h2>Exemplo: o que já foi feito no Rfeitosa</h2>
       <p>Foi só um exemplo de como isso funciona na prática, com sistemas e automações feitos no Rfeitosa. Clique em um caso para destacá-lo.</p>
       <div class="cases" id="cases">
@@ -346,7 +337,6 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="integracao" data-title="Integração">
     <div class="inner">
-      <div class="eyebrow">07 <span>Integração</span></div>
       <h2>No Rfeitosa: nove sistemas, um só banco de dados</h2>
       <p>Em um serviço que fizemos para o Rfeitosa, 9 sistemas tinham os cadastros guardados cada um por conta própria. Juntamos tudo no mesmo banco de dados, e todas as tabelas dos sistemas passaram a se comunicar entre si.</p>
       <div class="row">
@@ -354,13 +344,13 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
         <span class="note" id="segnote">9 sistemas, 9 cadastros separados</span>
       </div>
       <ul class="pick" id="integList">
-        <li><button type="button" data-i="1" aria-pressed="true"><span class="head"><h3><span class="k">01 · </span>Antes: cadastros separados</h3></span>
+        <li><button type="button" data-i="1" aria-pressed="true"><span class="head"><h3><span class="k">1.</span>Antes: cadastros separados</h3></span>
           <p>Os 9 sistemas guardavam os seus cadastros de forma separada, cada um no seu canto. Um sistema não enxergava o que o outro tinha.</p></button></li>
-        <li><button type="button" data-i="2" aria-pressed="false"><span class="head"><h3><span class="k">02 · </span>Tudo no mesmo banco de dados</h3></span>
+        <li><button type="button" data-i="2" aria-pressed="false"><span class="head"><h3><span class="k">2.</span>Tudo no mesmo banco de dados</h3></span>
           <p>Juntamos os 9 sistemas em um único banco de dados. Cada sistema continua com as suas tabelas, mas agora todas ficam no mesmo lugar.</p></button></li>
-        <li><button type="button" data-i="3" aria-pressed="false"><span class="head"><h3><span class="k">03 · </span>Tabelas que se comunicam</h3></span>
+        <li><button type="button" data-i="3" aria-pressed="false"><span class="head"><h3><span class="k">3.</span>Tabelas que se comunicam</h3></span>
           <p>Como estão no mesmo banco, as tabelas de todos os sistemas passaram a se ligar umas às outras. O que é cadastrado em um sistema fica disponível para os outros.</p></button></li>
-        <li><button type="button" data-i="4" aria-pressed="false"><span class="head"><h3><span class="k">04 · </span>Nenhuma informação vaza</h3></span>
+        <li><button type="button" data-i="4" aria-pressed="false"><span class="head"><h3><span class="k">4.</span>Nenhuma informação vaza</h3></span>
           <p>Sem cópias soltas entre os sistemas, a informação fica em um só lugar. Por isso nada escapa pelo caminho e tudo fica integrado.</p></button></li>
       </ul>
     </div>
@@ -368,39 +358,32 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   <section class="sec" id="simples" data-title="Em palavras simples">
     <div class="inner">
-      <div class="eyebrow">08 <span>Em palavras simples</span></div>
       <h2>Em palavras simples</h2>
       <dl class="qa">
         <div><dt>O que é um banco de dados?</dt><dd>É o lugar onde as informações ficam guardadas de forma organizada. Pense em um único arquivo bem arrumado, em vez de nove gavetas separadas, cada uma com a sua versão dos mesmos dados.</dd></div>
         <div><dt>O que são as tabelas que se comunicam?</dt><dd>Cada sistema organiza os seus dados em tabelas, como planilhas dentro do banco. Quando todas estão no mesmo banco, elas podem se ligar umas às outras: um dado cadastrado uma vez passa a servir a todos os sistemas que precisam dele.</dd></div>
         <div><dt>Por que nenhuma informação vaza?</dt><dd>Quando cada sistema tem o seu cadastro, os dados acabam copiados e circulando por vários cantos. Com tudo no mesmo banco, não há cópias soltas: a informação fica em um só lugar e os sistemas apenas a consultam e atualizam.</dd></div>
       </dl>
-      <div class="big">
-        <div><strong>9</strong><span>sistemas</span></div>
-        <div><strong class="a">1</strong><span>banco de dados</span></div>
-        <div><strong>0</strong><span>informação vazando</span></div>
-      </div>
-      <p class="closing">9 sistemas, 1 banco de dados, <span>todas as tabelas conversando</span> e nenhuma informação vazando.</p>
+      <p class="closing">9 sistemas, 1 banco de dados, todas as tabelas conversando e nenhuma informação vazando.</p>
     </div>
   </section>
 
   <section class="sec" id="pd" data-title="P&amp;D">
     <div class="inner">
-      <div class="eyebrow">09 <span>P&amp;D</span></div>
       <h2>Um setor de P&amp;D</h2>
       <p class="lead">Projetos e Desenvolvimento.</p>
       <p>Se o escritório realmente quiser ter um setor de P&amp;D, é preciso entender que ele fica focado principalmente em <b>sistemas e automações</b>.</p>
       <div class="pd" id="pdGrid">
-        <button type="button" class="main" data-p="sistemas" aria-pressed="false"><span class="badge">foco principal</span><h3>Sistemas</h3><p>Estruturar e programar os sistemas internos do escritório.</p></button>
-        <button type="button" class="main" data-p="automacoes" aria-pressed="false"><span class="badge">foco principal</span><h3>Automações</h3><p>Unir as informações internas e fazer os setores se comunicarem.</p></button>
-        <button type="button" data-p="gestao" aria-pressed="false"><span class="cap note">apoio</span><h3>Gestão</h3><p>Quem cuida do quê e o que falta.</p></button>
-        <button type="button" data-p="processos" aria-pressed="false"><span class="cap note">apoio</span><h3>Processos</h3><p>O fluxo de cada setor, junto com os líderes.</p></button>
+        <button type="button" class="main" data-p="sistemas" aria-pressed="false"><span class="badge">Foco principal</span><h3>Sistemas</h3><p>Estruturar e programar os sistemas internos do escritório.</p></button>
+        <button type="button" class="main" data-p="automacoes" aria-pressed="false"><span class="badge">Foco principal</span><h3>Automações</h3><p>Unir as informações internas e fazer os setores se comunicarem.</p></button>
+        <button type="button" data-p="gestao" aria-pressed="false"><span class="cap">Apoio</span><h3>Gestão</h3><p>Quem cuida do quê e o que falta.</p></button>
+        <button type="button" data-p="processos" aria-pressed="false"><span class="cap">Apoio</span><h3>Processos</h3><p>O fluxo de cada setor, junto com os líderes.</p></button>
       </div>
     </div>
   </section>
 </main>
 
-<footer><span>NORT · Como funciona</span><span>aldojgm456-glitch</span></footer>
+<footer><span>NORT, como funciona</span><span>aldojgm456-glitch</span></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -418,8 +401,8 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       case 'introducao': return 'Setores com rotinas próprias';
       case 'fluxo': return ui.fixed?'Gargalo automatizado: o fluxo passa':'Setor B: o trabalho trava aqui';
       case 'frentes': return ({gestao:'Gestão: quem cuida do quê',processos:'Processos: o fluxo de cada setor',sistemas:'Sistemas: banco de dados próprio no centro',automacoes:'Automações: setores conversando'})[ui.frente]||'As quatro frentes em volta do escritório';
-      case 'eco': return ['','1 · Setores separados','2 · Tudo no mesmo banco de dados','3 · Ecossistema próprio da NORT'][ui.eco];
-      case 'casos': return ui.caseSel==null?'Casos feitos no Rfeitosa':['Controladoria','Setores comerciais','Pessoas (RH)','Evento · App Connect'][ui.caseSel];
+      case 'eco': return ['','Passo 1: setores separados','Passo 2: tudo no mesmo banco de dados','Passo 3: ecossistema próprio da NORT'][ui.eco];
+      case 'casos': return ui.caseSel==null?'Casos feitos no Rfeitosa':['Controladoria','Setores comerciais','Pessoas (RH)','Evento com o App Connect'][ui.caseSel];
       case 'integracao': return ['','Antes: 9 cadastros separados','Tudo no mesmo banco de dados','Tabelas que se comunicam','Nenhuma informação vaza'][ui.integ];
       case 'simples': return 'Um só lugar para os dados';
       case 'pd': return 'P&D: foco em sistemas e automações';
@@ -459,19 +442,16 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   $('#fs').addEventListener('click',()=>{const d=document.documentElement;
     try{ if(document.fullscreenElement) document.exitFullscreen(); else if(d.requestFullscreen) d.requestFullscreen().catch(()=>{}); }catch(e){} });
 
-  /* entrada do texto */
-  $$('.sec .inner').forEach(el=>Array.from(el.children).forEach((c,i)=>c.style.setProperty('--i',i)));
-  if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{rootMargin:'0px 0px -12% 0px'});
-    $$('.sec').forEach(s=>io.observe(s));}
-  else $$('.sec').forEach(s=>s.classList.add('in'));
+  /* ordem de entrada do texto da abertura */
+  $$('#topo .inner').forEach(el=>Array.from(el.children).forEach((c,i)=>c.style.setProperty('--i',i)));
 
   /* seção ativa */
-  const secs=ORDER.map(id=>document.getElementById(id)), links=$$('nav.links a'), prog=$('#prog'), cnum=$('#cnum');
+  const secs=ORDER.map(id=>document.getElementById(id)), links=$$('nav.links a'), prog=$('#prog'), cnum=$('#cnum'), legendBox=$('.legend');
   function onScroll(){
     const mid=innerHeight*.5; let idx=0;
     secs.forEach((s,i)=>{if(s.getBoundingClientRect().top<=mid) idx=i;});
     const id=ORDER[idx];
-    if(id!==active){active=id;links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+id));cnum.textContent=String(idx+1).padStart(2,'0');refreshLegend();}
+    if(id!==active){active=id;links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+id));cnum.textContent=String(idx+1);legendBox.classList.toggle('later',idx>0);refreshLegend();}
     const max=document.documentElement.scrollHeight-innerHeight;
     prog.style.transform='scaleX('+(max>0?Math.min(1,scrollY/max):0)+')';
   }
@@ -504,37 +484,48 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const TINT={base:new THREE.Color(0x070b14),warm:new THREE.Color(0x130d0a),cool:new THREE.Color(0x060e21)};
+  const TINT={base:new THREE.Color(0xf2f6ec),warm:new THREE.Color(0xf5f2ec),cool:new THREE.Color(0xedf2f5)};
   const bgCur=TINT.base.clone();
   renderer.setClearColor(bgCur,1);
   const scene=new THREE.Scene();
-  scene.fog=new THREE.Fog(0x070b14,16,34);
+  scene.fog=new THREE.Fog(0xf2f6ec,16,34);
   const camera=new THREE.PerspectiveCamera(40,1,.1,100);
   const root=new THREE.Group(); scene.add(root);
 
-  scene.add(new THREE.AmbientLight(0x8fa6d6,.5));
-  const key=new THREE.DirectionalLight(0xffffff,.6); key.position.set(5,8,6); scene.add(key);
-  const rim=new THREE.DirectionalLight(0x7aa7ff,.5); rim.position.set(-6,-2,-5); scene.add(rim);
+  scene.add(new THREE.AmbientLight(0xffffff,.62));
+  const key=new THREE.DirectionalLight(0xffffff,.55); key.position.set(5,8,6); scene.add(key);
+  const rim=new THREE.DirectionalLight(0xdfe6ff,.25); rim.position.set(-6,-2,-5); scene.add(rim);
 
-  const grid=new THREE.GridHelper(48,48,0x1a2542,0x111a2f); grid.position.y=-3.6;
-  grid.material.transparent=true; grid.material.opacity=.55; scene.add(grid);
+  // o chão é uma folha de formulário contínuo: faixas verdes, picote e furos de tração nas margens
+  const feed=(()=>{const c=document.createElement('canvas');c.width=1024;c.height=512;const x=c.getContext('2d');
+    for(let i=0;i<4;i++){x.fillStyle=i%2?'#f2f6ec':'#dfebd6';x.fillRect(0,i*128,1024,128);}
+    x.fillStyle='#f6f8f1';x.fillRect(0,0,84,512);x.fillRect(940,0,84,512);
+    x.strokeStyle='#c4ccbc';x.lineWidth=3;x.setLineDash([10,8]);
+    [84,940].forEach(X=>{x.beginPath();x.moveTo(X,0);x.lineTo(X,512);x.stroke();});
+    x.setLineDash([]);x.fillStyle='#e3e8dc';x.strokeStyle='#bcc5b3';x.lineWidth=2;
+    for(let y=32;y<512;y+=64)[42,982].forEach(X=>{x.beginPath();x.arc(X,y,15,0,Math.PI*2);x.fill();x.stroke();});
+    const t=new THREE.CanvasTexture(c);t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,80/15);t.anisotropy=8;return t;})();
+  const sheet=new THREE.Mesh(new THREE.PlaneGeometry(30,80),new THREE.MeshBasicMaterial({map:feed}));
+  sheet.rotation.x=-Math.PI/2;sheet.position.set(2,-3.6,-14);scene.add(sheet);
 
   // brilho aditivo, faz o papel de um bloom barato
-  const GLOW=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
-    const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.22,'rgba(255,255,255,.42)');g.addColorStop(1,'rgba(255,255,255,0)');
-    x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);})();
-  const glowMat=op=>new THREE.SpriteMaterial({map:GLOW,color:0xcfe0ff,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false});
+  // no papel não há brilho aditivo: HALO é uma mancha de tinta suave, DOT é um ponto de dado nítido
+  const radial=stops=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+    const g=x.createRadialGradient(64,64,0,64,64,64);stops.forEach(([o,a])=>g.addColorStop(o,'rgba(255,255,255,'+a+')'));
+    x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);};
+  const HALO=radial([[0,.5],[.3,.2],[1,0]]),DOT=radial([[0,1],[.3,1],[.42,.35],[1,0]]);
+  const glowMat=(op,tex)=>new THREE.SpriteMaterial({map:tex||HALO,color:0x2340c4,transparent:true,opacity:op,depthWrite:false});
 
   // poeira de dados
   {const n=900,a=new Float32Array(n*3);for(let i=0;i<n;i++){const r=8+Math.random()*20,th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
     a[i*3]=r*Math.sin(ph)*Math.cos(th);a[i*3+1]=r*Math.cos(ph)*.6;a[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(a,3));
-   var dust=new THREE.Points(g,new THREE.PointsMaterial({color:0x8ea6d6,size:.06,transparent:true,opacity:.55,depthWrite:false}));scene.add(dust);}
+   var dust=new THREE.Points(g,new THREE.PointsMaterial({color:0x8a93a6,size:.05,transparent:true,opacity:.3,depthWrite:false}));scene.add(dust);}
 
-  const COL={dim:new THREE.Color(0x44547c),acc:new THREE.Color(0x7aa7ff),amb:new THREE.Color(0xf2b84b),ice:new THREE.Color(0xcfe0ff)};
+  const COL={dim:new THREE.Color(0x8a93a6),acc:new THREE.Color(0x2340c4),amb:new THREE.Color(0xc2362b),ice:new THREE.Color(0x2f52e0)}; // grafite, caneta, carimbo, dado
   const SYS=['CRM','RH','RFOP','SHUB','CONSULT','TRIBUTÁRIO','CONNECT','VALLEY','CASH'];
   const SEC=['RH','Comercial','Atendimento','Contábil','Fiscal','','','',''];
-  const CASE=['Controladoria','Comercial · CRM','RH · ponto','App Connect','','','','',''];
+  const CASE=['Controladoria','CRM comercial','RH e ponto','App Connect','','','','',''];
   const SC=[[-4.6,1.9,-1],[-1.4,2.7,-3],[2.3,2.2,-.4],[4.9,.5,-2.6],[-3.1,-.7,1],[.5,.1,-1.9],[3.4,-1.6,.9],[-.8,-2.2,-.2],[-5.3,-1.9,-3]];
   const CHAIN=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[2,5],[5,8]];
   const GRIDP=[[0,1],[1,2],[3,4],[4,5],[6,7],[7,8],[0,3],[3,6],[1,4],[4,7],[2,5],[5,8]];
@@ -543,9 +534,9 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   const boxG=new THREE.BoxGeometry(.9,.9,.9), edgeG=new THREE.EdgesGeometry(boxG), coreG=new THREE.BoxGeometry(.3,.3,.3);
   const nodes=SYS.map((name,i)=>{
     const g=new THREE.Group(), body=new THREE.Group();
-    const mat=new THREE.MeshStandardMaterial({color:0x111a2f,metalness:.5,roughness:.5,transparent:true,opacity:.9,emissive:0x000000});
-    const em=new THREE.LineBasicMaterial({color:0x44547c,transparent:true,opacity:1});
-    const coreM=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0});
+    const mat=new THREE.MeshStandardMaterial({color:0xfbfcf8,metalness:0,roughness:.85,transparent:true,opacity:.86,emissive:0x000000});
+    const em=new THREE.LineBasicMaterial({color:0x8a93a6,transparent:true,opacity:1});
+    const coreM=new THREE.MeshBasicMaterial({color:0x2340c4,transparent:true,opacity:0});
     body.add(new THREE.Mesh(boxG,mat),new THREE.LineSegments(edgeG,em),new THREE.Mesh(coreG,coreM));
     const glow=new THREE.Sprite(glowMat(0)); glow.scale.setScalar(1.7);
     g.add(body,glow); g.position.set(SC[i][0],SC[i][1],SC[i][2]); g.scale.setScalar(.0001); root.add(g);
@@ -555,32 +546,32 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
 
   // banco de dados central: três camadas que giram em sentidos diferentes, com pontos na borda para a rotação aparecer
   const db=new THREE.Group(); root.add(db);
-  const dbMat=new THREE.MeshStandardMaterial({color:0x14203a,metalness:.6,roughness:.28,emissive:0x1d3a7a,emissiveIntensity:.4});
-  const ringMat=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:.8});
+  const dbMat=new THREE.MeshStandardMaterial({color:0xdfebd6,metalness:0,roughness:.7,emissive:0x2340c4,emissiveIntensity:.05});
+  const ringMat=new THREE.MeshBasicMaterial({color:0x2340c4,transparent:true,opacity:.8});
   const cylG=new THREE.CylinderGeometry(1.1,1.1,.42,56), torG=new THREE.TorusGeometry(1.115,.025,8,72);
   const rimG=new THREE.BufferGeometry();
   {const n=28,a=new Float32Array(n*3);for(let i=0;i<n;i++){const th=i/n*Math.PI*2;a[i*3]=Math.cos(th)*1.13;a[i*3+2]=Math.sin(th)*1.13;}
    rimG.setAttribute('position',new THREE.BufferAttribute(a,3));}
-  const rimM=new THREE.PointsMaterial({color:0xcfe0ff,size:.09,transparent:true,opacity:.6,depthWrite:false});
+  const rimM=new THREE.PointsMaterial({color:0x2340c4,size:.08,transparent:true,opacity:.6,depthWrite:false});
   const layers=[0,1,2].map(()=>{const L=new THREE.Group(),r=new THREE.Mesh(torG,ringMat),p=new THREE.Points(rimG,rimM);
     r.rotation.x=Math.PI/2;r.position.y=.21;p.position.y=.21;L.add(new THREE.Mesh(cylG,dbMat),r,p);db.add(L);return L;});
   const LSPIN=[.45,-.3,.7];
-  const scanM=new THREE.MeshBasicMaterial({color:0xcfe0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+  const scanM=new THREE.MeshBasicMaterial({color:0x2340c4,transparent:true,opacity:0,depthWrite:false});
   const scan=new THREE.Mesh(new THREE.TorusGeometry(1.32,.018,8,96),scanM); scan.rotation.x=Math.PI/2; db.add(scan);
-  const dbGlow=new THREE.Sprite(glowMat(0)); dbGlow.scale.setScalar(6.5); dbGlow.material.color.set(0x7aa7ff); db.add(dbGlow);
-  const dbLight=new THREE.PointLight(0x7aa7ff,0,14); db.add(dbLight);
+  const dbGlow=new THREE.Sprite(glowMat(0)); dbGlow.scale.setScalar(6.5); dbGlow.material.color.set(0x2340c4); db.add(dbGlow);
+  const dbLight=new THREE.PointLight(0x9fb3ff,0,14); db.add(dbLight);
   db.scale.setScalar(.0001);
 
   function makeLinks(color,max){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(max*6),3));
     const m=new THREE.LineBasicMaterial({color,transparent:true,opacity:0,depthWrite:false});const l=new THREE.LineSegments(g,m);l.max=max;l.frustumCulled=false;root.add(l);return l;}
-  const spokes=makeLinks(0x7aa7ff,12), chain=makeLinks(0x7aa7ff,12), mesh=makeLinks(0x7aa7ff,24);
+  const spokes=makeLinks(0x2340c4,12), chain=makeLinks(0x2340c4,12), mesh=makeLinks(0x2340c4,24);
 
   // pulsos de dados com rastro
-  const pulses=[];for(let j=0;j<16;j++){const trail=[];for(let q=0;q<4;q++){const s=new THREE.Sprite(glowMat(0));s.visible=false;root.add(s);trail.push(s);}pulses.push(trail);}
+  const pulses=[];for(let j=0;j<16;j++){const trail=[];for(let q=0;q<4;q++){const s=new THREE.Sprite(glowMat(0,DOT));s.visible=false;root.add(s);trail.push(s);}pulses.push(trail);}
 
   // ondas de choque
   const waveG=new THREE.RingGeometry(.94,1,80);
-  const waves=[0,1,2,3,4,5].map(()=>{const m=new THREE.Mesh(waveG,new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+  const waves=[0,1,2,3,4,5].map(()=>{const m=new THREE.Mesh(waveG,new THREE.MeshBasicMaterial({color:0x2340c4,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
     m.visible=false;root.add(m);return {m,t0:-9,dur:1.5,max:4,flat:false};});
   let wi=0;
 
@@ -588,19 +579,19 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
   function makeLabel(text,stroke,wide){
     const W=wide?1024:512,H=128,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-    x.font='500 44px "IBM Plex Mono", ui-monospace, monospace';
+    x.font='600 44px "Archivo", system-ui, sans-serif';
     const pw=Math.min(W-8,x.measureText(text).width+60),x0=(W-pw)/2;
-    rr(x,x0,24,pw,80,12);x.fillStyle='rgba(9,14,26,.86)';x.fill();x.lineWidth=3;x.strokeStyle=stroke;x.globalAlpha=.7;x.stroke();x.globalAlpha=1;
-    x.fillStyle='#E7EBF3';x.textAlign='center';x.textBaseline='middle';x.fillText(text,W/2,H/2+2);
+    rr(x,x0,24,pw,80,8);x.fillStyle='rgba(251,252,248,.95)';x.fill();x.lineWidth=3;x.strokeStyle=stroke;x.globalAlpha=.8;x.stroke();x.globalAlpha=1;
+    x.fillStyle='#1C2540';x.textAlign='center';x.textBaseline='middle';x.fillText(text,W/2,H/2+2);
     const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;t.anisotropy=4;
     const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,depthTest:false,opacity:0}));
     s.scale.set(.48*W/H,.48,1);s.renderOrder=10;s.visible=false;root.add(s);return s;}
   let labels=null, ex=null;
   function buildLabels(){
     if(labels) return;
-    labels={sys:SYS.map(t=>makeLabel(t,'#7AA7FF')),sec:SEC.map(t=>t?makeLabel(t,'#7AA7FF'):null),case:CASE.map(t=>t?makeLabel(t,'#7AA7FF'):null)};
-    ex={A:makeLabel('Setor A','#8F9BB3'),B:makeLabel('Setor B','#8F9BB3'),C:makeLabel('Setor C','#8F9BB3'),
-        trava:makeLabel('trabalho trava aqui','#F2B84B',true),db:makeLabel('NORT · banco de dados','#7AA7FF',true)};
+    labels={sys:SYS.map(t=>makeLabel(t,'#2340C4')),sec:SEC.map(t=>t?makeLabel(t,'#2340C4'):null),case:CASE.map(t=>t?makeLabel(t,'#2340C4'):null)};
+    ex={A:makeLabel('Setor A','#5E6779'),B:makeLabel('Setor B','#5E6779'),C:makeLabel('Setor C','#5E6779'),
+        trava:makeLabel('O trabalho trava aqui','#C2362B',true),db:makeLabel('Banco de dados NORT','#2340C4',true)};
     ex.A.position.set(-3.4,2.55,0);ex.B.position.set(0,2.55,0);ex.C.position.set(3.4,2.55,0);ex.trava.position.set(0,-2.6,0);
   }
   Promise.race([document.fonts?document.fonts.ready:Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(buildLabels);
@@ -783,9 +774,9 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   const kindOf=st=>st.lab==='sec'?'sec':st.lab==='case'?'case':active==='fluxo'?'flow':'sys';
   const linked=st=>st.spokes>=.3||st.mesh>=.45;
   function nameOf(i){
-    if(i==='db') return 'NORT · banco de dados';
+    if(i==='db') return 'Banco de dados NORT';
     const k=kindOf(lastSt);
-    return k==='sec'?SEC[i]:k==='case'?CASEI[i].h:k==='flow'?'Setor '+'ABC'[Math.floor(i/3)]+' · etapa '+(i%3+1):SYS[i];
+    return k==='sec'?SEC[i]:k==='case'?CASEI[i].h:k==='flow'?'Setor '+'ABC'[Math.floor(i/3)]+', etapa '+(i%3+1):SYS[i];
   }
   function hitTest(cx,cy){
     if(!lastSt) return null;
@@ -800,7 +791,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   function select(id){
     if(id===sel) return;
     chips.forEach(c=>{c.visible=false;c.material.opacity=0;});chips=[];
-    sel=id;selT0=rt;selSec=active;pick.open=id!==null;
+    sel=id;selT0=rt;selSec=active;pick.open=id!==null;tip.classList.remove('on');
     if(typeof id==='number'&&exN!==id){unexplode();exN=id;nodes[id].body.add(ex8);}
     if(id===null){info.classList.remove('on');info.setAttribute('aria-hidden','true');return;}
     infoDirty=true;pulseBoost=Math.max(pulseBoost,.6);
@@ -823,13 +814,13 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     const k=sel==='db'?'db':kindOf(st), L=linked(st), others=names=>{const o=[];for(let j=0;j<9;j++)if(j!==sel&&st.n[j].v&&names[j])o.push(names[j]);return o;};
     let kind='',title='',text='',status=null,tags=[],withT='',withL=[],action=null,chipT=[];
     if(k==='db'){
-      kind='Banco de dados';title='NORT · banco de dados';
+      kind='Banco de dados';title='Banco de dados NORT';
       text='É o lugar onde as informações ficam guardadas de forma organizada: um único arquivo bem arrumado, em vez de nove gavetas separadas.';
       status={ok:true,t:'Sem cópias soltas: os sistemas apenas consultam e atualizam a informação, que fica em um só lugar.'};
       chipT=['9 sistemas','1 banco de dados','0 informação vazando'];
     }else if(k==='sys'){
       const name=SYS[sel],d=SYSI[name]||SYSDEF;
-      kind='Sistema '+String(sel+1).padStart(2,'0')+' / 09';title=name;text=d.t;tags=d.tags;
+      kind='Sistema '+(sel+1)+' de 9';title=name;text=d.t;tags=d.tags;
       status=L?{ok:true,t:'Integrado: as tabelas ficam no banco da NORT e se ligam às dos outros sistemas. O que é cadastrado aqui fica disponível para todos.'}
               :{ok:false,t:'Isolado: guarda o próprio cadastro, separado. Não enxerga o que os outros sistemas têm.'};
       withT=L?'Conversa com':'Não enxerga';withL=others(SYS);
@@ -843,11 +834,11 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       chipT=L?['mesmo banco','automação']:['informação separada'];
       if(active==='eco'&&ui.eco===1)action={t:'Juntar no banco de dados',f:()=>eBtns[1].click()};
     }else if(k==='case'){
-      const d=CASEI[sel];kind='Exemplo · Rfeitosa';title=d.h;text=d.t;tags=d.tags;chipT=d.tags;
+      const d=CASEI[sel];kind='Caso do Rfeitosa';title=d.h;text=d.t;tags=d.tags;chipT=d.tags;
       status={ok:true,t:'O ponto de partida foi o fluxo do setor, e a tecnologia veio depois.'};
     }else{
       const col='ABC'[Math.floor(sel/3)],step=sel%3+1;
-      kind='Fluxo · Setor '+col;title='Etapa '+step+' do Setor '+col;
+      kind='Setor '+col;title='Etapa '+step+' do Setor '+col;
       if(sel===5){
         text=ui.fixed?'Era aqui que o trabalho travava. Com a automação, ele passa direto para o Setor C.':'O trabalho trava aqui: as etapas de antes se acumulam e o Setor C fica esperando.';
         status={ok:ui.fixed,t:ui.fixed?'Gargalo automatizado.':'Gargalo: o primeiro ponto a resolver.'};
@@ -870,27 +861,27 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     info.classList.add('on');info.setAttribute('aria-hidden','false');
     selWarn=!!status&&!status.ok;
     chips.forEach(c=>{c.visible=false;c.material.opacity=0;});
-    chips=chipT.map(x=>chipLabel(x,selWarn?'#F2B84B':'#7AA7FF'));
+    chips=chipT.map(x=>chipLabel(x,selWarn?'#C2362B':'#2340C4'));
   }
 
   // anéis em volta do ícone escolhido, pulsos que ele envia e linhas até os destinos
-  const haloM=new THREE.MeshBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+  const haloM=new THREE.MeshBasicMaterial({color:0x2340c4,transparent:true,opacity:0,depthWrite:false});
   const halo=new THREE.Group(),h1=new THREE.Mesh(new THREE.TorusGeometry(.95,.012,6,90),haloM),h2=new THREE.Mesh(new THREE.TorusGeometry(1.14,.008,6,90),haloM);
   halo.add(h1,h2);halo.visible=false;root.add(halo);
-  const bc=[];for(let j=0;j<9;j++){const tr=[];for(let q=0;q<3;q++){const s=new THREE.Sprite(glowMat(0));s.visible=false;root.add(s);tr.push(s);}bc.push(tr);}
-  const beams=makeLinks(0x7aa7ff,10);
+  const bc=[];for(let j=0;j<9;j++){const tr=[];for(let q=0;q<3;q++){const s=new THREE.Sprite(glowMat(0,DOT));s.visible=false;root.add(s);tr.push(s);}bc.push(tr);}
+  const beams=makeLinks(0x2340c4,10);
   let haloOp=0,bcOp=0;
   const bcCol=COL.ice.clone(),T0=new THREE.Vector3();
 
   // ao abrir um ícone, o cubo se desmonta em 8 "tabelas" presas ao núcleo
   const ex8=new THREE.Group();ex8.visible=false;
   const subG=new THREE.BoxGeometry(.43,.43,.43),subE=new THREE.EdgesGeometry(subG);
-  const subM=new THREE.MeshStandardMaterial({color:0x111a2f,metalness:.5,roughness:.45,transparent:true,opacity:.95,emissive:0x1d3a7a,emissiveIntensity:1});
-  const subL=new THREE.LineBasicMaterial({color:0x7aa7ff,transparent:true,opacity:1});
+  const subM=new THREE.MeshStandardMaterial({color:0xfbfcf8,metalness:0,roughness:.8,transparent:true,opacity:.95,emissive:0x2340c4,emissiveIntensity:1});
+  const subL=new THREE.LineBasicMaterial({color:0x2340c4,transparent:true,opacity:1});
   const DIRS=[];for(const a of [-1,1])for(const b of [-1,1])for(const c of [-1,1])DIRS.push(new THREE.Vector3(a,b,c));
   const subs=DIRS.map(d=>{const g=new THREE.Group();g.add(new THREE.Mesh(subG,subM),new THREE.LineSegments(subE,subL));g.position.copy(d).multiplyScalar(.225);ex8.add(g);return g;});
   const tieG=new THREE.BufferGeometry();tieG.setAttribute('position',new THREE.BufferAttribute(new Float32Array(8*6),3));
-  const tieM=new THREE.LineBasicMaterial({color:0x7aa7ff,transparent:true,opacity:0,depthWrite:false});
+  const tieM=new THREE.LineBasicMaterial({color:0x2340c4,transparent:true,opacity:0,depthWrite:false});
   const ties=new THREE.LineSegments(tieG,tieM);ties.frustumCulled=false;ex8.add(ties);
   let exN=null,exE=0;
   function unexplode(){if(exN===null)return;const b=nodes[exN].body;b.children[0].visible=b.children[1].visible=true;b.children[2].scale.setScalar(1);ex8.visible=false;exN=null;exE=0;}
@@ -918,7 +909,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     const svg=$('#infoMap'),add=e=>svg.appendChild(e);svg.replaceChildren();
     if(k==='flow'){
       const fp=i=>[40+Math.floor(i/3)*60,30+(i%3)*32];
-      'ABC'.split('').forEach((c,j)=>add(sv('text',{x:40+j*60,y:10,'text-anchor':'middle',class:'h'},'SETOR '+c)));
+      'ABC'.split('').forEach((c,j)=>add(sv('text',{x:40+j*60,y:10,'text-anchor':'middle',class:'h'},'Setor '+c)));
       CHAIN.forEach(([a,b],q)=>{const A=fp(a),B=fp(b),jam=!ui.fixed&&(b===5||a===5||a>=6);
         add(sv('line',{x1:A[0],y1:A[1],x2:B[0],y2:B[1],class:jam?'no':'ok',style:'animation-delay:'+(-q*.12)+'s'}));});
       for(let i=0;i<9;i++){const P=fp(i),w=i===5&&!ui.fixed;
@@ -956,7 +947,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
   function setHover(h,e){
     if(h!==hover){hover=h;canvas.style.cursor=h!==null?'pointer':'';}
     if(h===null){tip.classList.remove('on');return;}
-    tip.replaceChildren(document.createTextNode(nameOf(h)+' · '),el('b',null,h===sel?'aberto':'clique para abrir'));
+    tip.replaceChildren(el('b',null,nameOf(h)),document.createTextNode(h===sel?': aberto':': clique para abrir'));
     tip.style.transform='translate('+(e.clientX+16)+'px,'+(e.clientY+16)+'px)';tip.classList.add('on');
   }
   addEventListener('pointermove',e=>{
@@ -1036,7 +1027,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       n.em.color.lerp(col,k);n.coreM.color.lerp(col,k);
       n.coreM.opacity+=((s.c==='dim'?0:.95)-n.coreM.opacity)*k;
       n.mat.emissive.lerp(tc.copy(col).multiplyScalar(s.c==='dim'?.04:.22),k);
-      const go=(s.c==='dim'?.08:s.c==='amb'?.75:.42)*(1+pulseBoost*.8);
+      const go=(s.c==='dim'?.05:s.c==='amb'?.38:.3)*(1+pulseBoost*.8);
       n.dim+=(((typeof sel==='number'&&sel!==i)?.18:1)-n.dim)*Math.min(1,k*1.5);
       n.mat.opacity=.9*n.dim;n.em.opacity=n.dim;
       const inv=i===invI?Math.max(0,1-(rt-invT)/1.4):0;
@@ -1052,7 +1043,7 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
     ease(cur,k,'spread',st.spread);ease(cur,k,'scan',st.scan);
     db.scale.setScalar(Math.max(cur.db,.0001));db.visible=cur.db>.01;db.rotation.y+=dt*.08*ms;
     layers.forEach((L,j)=>{L.position.y=(j-1)*.56*cur.spread+(cur.spread>1.05?Math.sin(t*1.6+j*1.2)*.05:0);L.rotation.y+=dt*ms*LSPIN[j];});
-    ringMat.opacity=.35+.6*cur.glow;dbMat.emissiveIntensity=.2+.7*cur.glow;dbLight.intensity=1.8*cur.glow*cur.db;rimM.opacity=.25+.65*cur.glow;
+    ringMat.opacity=.35+.6*cur.glow;dbMat.emissiveIntensity=.03+.1*cur.glow;dbLight.intensity=.5*cur.glow*cur.db;rimM.opacity=.25+.65*cur.glow;
     scan.position.y=Math.sin(t*1.4)*.78*cur.spread;scanM.opacity=cur.scan*.85;
     dbGlow.material.opacity=.32*cur.glow*Math.min(1,cur.db)*(1+.15*Math.sin(t*2));
     const dbOn=cur.db>.15;const dbP=()=>dbOn?center:null;
@@ -1109,12 +1100,12 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       exE+=(((sel===exN&&!reduce)?1:0)-exE)*Math.min(1,k*2.4);
       const nb=nodes[exN].body,e=EASE.io(Math.min(1,exE)),open=exE>.04,a=tieG.attributes.position.array;
       nb.children[0].visible=nb.children[1].visible=!open;ex8.visible=open;
-      nb.children[2].scale.setScalar(1+e*.9);
+      nb.children[2].scale.setScalar(1+e*.4);
       subs.forEach((g,j)=>{const d=DIRS[j],r=.225+.62*e+.06*e*Math.sin(t*2+j);g.position.set(d.x*r,d.y*r,d.z*r);
         g.rotation.set(e*Math.sin(t*.8+j)*.8,e*t*.6*(j%2?1:-1),0);
         a[j*6]=a[j*6+1]=a[j*6+2]=0;a[j*6+3]=g.position.x;a[j*6+4]=g.position.y;a[j*6+5]=g.position.z;});
       tieG.attributes.position.needsUpdate=true;tieM.opacity=.7*e;ex8.rotation.y=e*t*.5;
-      subL.color.lerp(selWarn?COL.amb:COL.acc,Math.min(1,k*2));tieM.color.copy(subL.color);subM.emissive.copy(subL.color).multiplyScalar(.3);
+      subL.color.lerp(selWarn?COL.amb:COL.acc,Math.min(1,k*2));tieM.color.copy(subL.color);subM.emissive.copy(subL.color).multiplyScalar(.12);
       if(sel!==exN&&exE<.03)unexplode();
     }
     const tg=[];let src=null,via=false;
@@ -1145,7 +1136,8 @@ footer{position:relative;z-index:2;max-width:1400px;margin:0 auto;padding:40px m
       ex.db.position.set(0,(.95+.3*(cur.spread-1))*cur.db+.75,0);}
 
     warp=Math.max(0,warp-dt*1.1);
-    dust.rotation.y+=dt*(.012+warp*.22)*ms;dust.material.opacity=.55+warp*.3;
+    dust.rotation.y+=dt*(.012+warp*.22)*ms;dust.material.opacity=.3+warp*.2;
+    if(!reduce)feed.offset.y-=dt*(.012+warp*.12); // a folha vai sendo puxada, como numa impressora
     bgCur.lerp(TINT[st.tint],k*.6);renderer.setClearColor(bgCur,1);scene.fog.color.copy(bgCur);
 
     // câmera: cada seção tem um movimento próprio e um "sopro" de zoom na troca de cena
